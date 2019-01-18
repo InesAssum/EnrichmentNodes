@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<tool name="curl" version="1.0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
+    <description>Test node hello world.</description>
+    <executableName>sayHello.R</executableName>
+    <PARAMETERS version="1.6.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/Param_1_6_2.xsd">
+        <NODE name="curl" description="Parameters for curl">
+            <ITEM name="outputDocument" type="output-file" description="Location of the output file" required="true" value=""/>
+        </NODE>
+    </PARAMETERS>
+    <cli>
+        <clielement optionIdentifier="--output-document">
+            <mapping referenceName="curl.outputDocument" />
+        </clielement>
+    </cli>
+</tool>

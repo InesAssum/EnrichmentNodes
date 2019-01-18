@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+<tool name="hiWorld2" version="1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
+    <description>Test node hello world.</description>
+    <manual>Designed to work with the modified aperim/immunonodes docker.</manual>
+    <executableName>sayHello.R</executableName>
+    <PARAMETERS version="1.6.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/Param_1_6_2.xsd">
+        <NODE name="hiWorld2" description="hello world test node">
+            <ITEM name="greetingString" value="hi" type="string" required="false" description="Greeting message."/>
+           <ITEM name="output" value="" type="output-file" required="true" supported_formats="*.txt" description="Name and path of output file"/>
+        </NODE>
+    </PARAMETERS>
+    <cli>
+        <clielement optionIdentifier=" ">
+            <mapping referenceName="hiWorld2.greetingString" />
+        </clielement>
+        <clielement optionIdentifier=" ">
+            <mapping referenceName="hiWorld2.output" />
+        </clielement>
+    </cli>
+</tool>

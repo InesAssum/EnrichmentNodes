@@ -1,0 +1,15 @@
+text/TSV gmt
+application/x-RDS RDS
+application/x-RData RData
+application/x-Rdata Rdata
+text/TSV tsv
+text/CSV csv
+text/FASTA fasta
+text/FASTQ fastq
+text/SAM sam
+text/TRIE trie
+binary/BAM bam
+application/x-fasta fa fasta
+application/x-fastq fq fastq
+application/x-sam sam
+application/x-bam bam
