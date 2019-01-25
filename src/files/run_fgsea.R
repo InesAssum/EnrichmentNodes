@@ -31,23 +31,40 @@ args = commandArgs(trailingOnly=TRUE)
 data <- args[1]
 result <- args[2]
 gmt <- args[3]
-minSize <- args[4]
-maxSize <- args[5]
-nperm <- args[6]
+minSize <- as.integer(args[4])
+maxSize <- as.integer(args[5])
+nperm <- as.integer(args[6])
 mygmt <- args[7]
+#mygmt
+
+# data <- "/Users/ines/Documents/ICB/PhD/projects/KNIME_multiOMICs_enrichment/software/GKN_plugins/EnrichmentNodes/src/data/mRNA.RDS"
+# result <- "/Users/ines/Downloads/test_local.RDS"
+# gmt <- "custom"
+# minSize <- 5
+# maxSize <- 500
+# nperm <- 10000
+# mygmt <- "/Users/ines/Documents/ICB/PhD/projects/KNIME_multiOMICs_enrichment/software/GKN_plugins/EnrichmentNodes/src/data/gmt/c2.cp.kegg.v6.0.symbols.gmt"
+
+# data <- "/data/example_data/mRNA.RDS"
+# result <- "/data/example_data/test1.RDS"
+# gmt <- "custom"
+# minSize <- 5
+# maxSize <- 500
+# nperm <- 10000
+# mygmt <- "/data/gmt/c2.cp.kegg.v6.0.symbols.gmt"
+
 
 if(gmt=="KEGG"){gmt <- "/data/gmt/c2.cp.kegg.v6.0.symbols.gmt"}
 if(gmt=="GO"){gmt <- "/data/gmt/c5.bp.v6.0.symbols.gmt"}
 if(gmt=="custom"){gmt <- mygmt}
 
-
 # load libraries
 library(fgsea)
 
 # load data
-if(grep("\\.RDS | \\.rds", data)){
+if(grepl("\\.RDS", data) | grepl("\\.rds", data)){
   rank <- readRDS(data)
-} else if (grep("\\.RData | \\.Rdata | \\.rdata", data)){
+} else if (grepl("\\.RData", data) | grepl("\\.Rdata", data) | grepl("\\.rdata", data) | grepl("\\.rda", data)){
   # # need to test this further, incomplete (not working)
   # input.env <- environment()
   # load(data, envir = input.env)
@@ -56,13 +73,15 @@ if(grep("\\.RDS | \\.rds", data)){
 }
 
 pathways <- gmtPathways(gmt)
-GSEA <- fgsea(pathways = pathways,
-              stats = rank,
+head(rank)
+GSEA <- fgsea(pathways,
+              rank,
+              nperm,
               minSize=minSize,
-              maxSize=maxSize,
-              nperm=nperm)
-table[, c("Pathway", "score", "score2", "pvalue", "padjust")] <-
-  c(GSEA[, c("Pathway", "ES")], NA, GSEA[, c("pvalue", "padjust")])
+              maxSize=maxSize)
+
+table <- data.frame(GSEA[, c("pathway", "ES")], NA, GSEA[, c("pval", "padj")])
+colnames(table) <- c("pathway", "score", "score2", "pval", "padj")
 
 res <- list("summary"=table,
             "res"=GSEA,

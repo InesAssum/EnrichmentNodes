@@ -10,8 +10,8 @@
             <ITEM description="min Size" name="minSize" restrictions="0:1000" type="int" value="15"/>
             <ITEM description="max Size" name="maxSize" restrictions="1:1000" type="int" value="500"/>
             <ITEM description="significance cutoff" name="cutoff" restrictions="0:10000000" type="float" value="0.05"/>
-            <ITEM description="Do you want to include direction of effect in the analysis" name="sign" type="bool" value="0"/>
-            <ITEM description="are small or big values significant" name="rev" type="bool" value="0"/>
+            <ITEM description="Do you want to include direction of effect in the analysis" name="sign" restrictions="yes,no" type="string" value="no"/>
+            <ITEM description="Are small or big absolute values significant?" name="rev" restrictions="small,big" type="string" value="small"/>
             <ITEM description="custom GS definition" name="mygmt" supported_formats="*.gmt" required="false" type="input-file" value=""/>
             <ITEM description="Output node" name="output" type="output-file" required="true" supported_formats="*.RDS" value=""/>
 		</NODE>

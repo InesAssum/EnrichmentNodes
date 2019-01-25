@@ -68,7 +68,42 @@ if (!(length(args)==2)) { \n\
 sayHello <- function(){ \n\
   writeLines(args[1], args[2]) \n\
 } \n\
-sayHello()' > /usr/bin/sayHello.R
-RUN chmod a+x /usr/bin/sayHello.R
+sayHello()' > /usr/bin/sayHello.R# Ubuntu base image 
+FROM ubuntu:18.04
+MAINTAINER Ines Assum <ines.assum@helmholtz-muenchen.de>
 
+# Setting variables to prevent errors at R installation
+ENV TZ=Europe/Minsk
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
+#installation of software
+RUN apt-get update && apt-get install -y software-properties-common \
+&& apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF \
+&& echo "deb https://download.mono-project.com/repo/ubuntu stable-bionic main" | tee /etc/apt/sources.list.d/mono-official-stable.list \
+&& apt update \
+&& apt-get update \
+&& apt-get install -y \
+    r-base \
+    monodevelop \
+#   mono-complete \    
+&& rm -rf /var/lib/apt/lists/* \
+&& apt-get clean \
+&& apt-get purge
+
+RUN Rscript -e 'source("http://bioconductor.org/biocLite.R")' -e 'biocLite("fgsea")'
+#RUN Rscript -e 'install.packages("ggplot2")'
+#RUN Rscript -e 'install.packages("ggpubr")'
+
+# R scripts: later imported via GitHub
+
+RUN mkdir /data
+
+COPY /files/* /usr/bin/
+COPY /files/Release/* /usr/bin/
+COPY /data/example_data/* /data/example_data/
+COPY /data/gmt/* /data/gmt/
+
+RUN chmod a+x /usr/bin/MonaConsoleApp.exe \
+&& chmod a+x /usr/bin/sayHello.R \
+&& chmod a+x /usr/bin/run_fgsea.R \
+&& chmod a+x /usr/bin/run_mona_single.R
