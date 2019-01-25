@@ -1,3 +1,13 @@
+# my stuff
+.DS_Store
+.Rhistory
+tmp_dir*
+data_local
+results_local
+*.vcf
+*.vcf.bgz
+
+
 # History files
 .Rhistory
 .Rapp.history
