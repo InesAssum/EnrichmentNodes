@@ -1,0 +1,42 @@
+# Benni's How-to-work-with-docker in 10 minutes
+
+## Download a Docker from dockerhub
+docker pull aperim/immunonodes
+
+## see Docker images, that are locally available
+docker images
+docker images -a
+
+## export a docker image as .tar
+docker export immunonodesmod > ImmunoNodesDockerMod.tar
+
+## load docker image from .tar
+docker load < ImmunoNodesDockerMod.tar
+
+## tag a docker
+docker tag 3bdbe08bdc5d immunonodesmod:latest
+
+## delete <multiple/a> docker image
+docker rmi ... ...
+
+## log onto a docker image
+sudo docker run -i -t aperim/immunonodes /bin/bash
+
+## leave
+exit
+
+
+### modify a docker - install vim, enter a script and > TODO, can't find it anymore -> commit docker
+cd /usr/bin/
+vim.tiny sayHello.R
+chmod a+x sayHello.R
+
+# commit?
+docker commit fb5c6379bce3 immunonodesmod
+
+## build docker from dockerfile
+docker build -t enrichi:latest .
+
+
+
+
