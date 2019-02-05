@@ -34,13 +34,13 @@ cutoff
 sign <- as.logical(args[7]=="yes")
 args[7]
 sign
-rev <- as.logical(args[8]=="small")
+rev <- !as.logical(args[8]=="small")
 args[8]
 rev
 mygmt <- args[9]
 mygmt
 
-#./usr/bin/run_mona_single.R '/data/example_data/mRNA.RDS' '/data/example_data/test1.RDS' 'KEGG' '15' '500' '25' '1' '1' '/data/gmt/c2.cp.kegg.v6.0.symbols.gmt'
+#./usr/bin/run_mona_single.R '/data/example_data/mRNA.RDS' '/data/example_data/test1.RDS' 'KEGG' '15' '500' '25' 'yes' 'large' '/data/gmt/c2.cp.kegg.v6.0.symbols.gmt'
 
 # data <- "/data/example_data/mRNA.RDS"
 # result <- "/data/example_data/test1.RDS"
@@ -48,8 +48,8 @@ mygmt
 # minSize <- 5
 # maxSize <- 500
 # cutoff <- 25
-# sign <- "true"
-# rev <- "true"
+# sign <- T
+# rev <- T
 # mygmt <- "/data/gmt/c2.cp.kegg.v6.0.symbols.gmt"
 
 # data <- "/Users/ines/Documents/ICB/PhD/projects/KNIME_multiOMICs_enrichment/software/GKN_plugins/EnrichmentNodes/src/data/mRNA.RDS"
@@ -163,7 +163,7 @@ write.table(yn, file=p.yn, col.names=F, row.names = F, quote=F)
 
 
 tries <- 0
-while (!file.exists(p.out) | tries>10){
+while (!file.exists(p.out) & tries<10){
   sys1 <- system(paste(p.mono, p.mona, "0",
                        p.assign, p.yn, p.terms, p.out, "1",
                        sep = " "), intern = T)

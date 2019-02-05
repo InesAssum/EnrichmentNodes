@@ -1,101 +1,132 @@
-# Ubuntu base image 
-FROM ubuntu:18.04
+# Rocker r-ver:3.5.1 base image 
+FROM rocker/r-ver:3.5.1
 MAINTAINER Ines Assum <ines.assum@helmholtz-muenchen.de>
 
-# Setting variables to prevent errors at R installation
-ENV TZ=Europe/Minsk
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-#installation of software
-RUN apt-get update && apt-get install -y software-properties-common \
-&& add-apt-repository ppa:git-core/ppa \
-&& add-apt-repository ppa:ubuntu-toolchain-r/test \
-&& apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF \
-&& echo "deb https://download.mono-project.com/repo/ubuntu stable-bionic main" | tee /etc/apt/sources.list.d/mono-official-stable.list \
-&& apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 \
-&& apt update \
-&& apt-get update && apt-get install -y \
-    gcc \
-    g++ \
+ARG RSTUDIO_VERSION
+ENV RSTUDIO_VERSION=${RSTUDIO_VERSION:-1.1.463}
+ARG S6_VERSION
+ENV S6_VERSION=${S6_VERSION:-v1.21.7.0}
+ENV S6_BEHAVIOUR_IF_STAGE2_FAILS=2
+ENV PATH=/usr/lib/rstudio-server/bin:$PATH
+
+## Download and install RStudio server & dependencies
+## Attempts to get detect latest version, otherwise falls back to version given in $VER
+## Symlink pandoc, pandoc-citeproc so they are available system-wide
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    file \
     git \
-    mercurial \
-    curl \
-    wget \
+    libapparmor1 \
     libcurl4-openssl-dev \
-    pkg-config \
-    libfreetype6-dev \
-    libmysqlclient-dev \
-    zlib1g-dev \
-    tcsh \
-    cmake \
-    r-base \
-    libbz2-dev \
-    liblzma-dev \
-    liblzo2-dev \
-    locales \
+    libedit2 \
+    libssl-dev \
+    lsb-release \
+    psmisc \
+    procps \
+    python-setuptools \
+    sudo \
+    wget \
+  && wget -O libssl1.0.0.deb http://ftp.debian.org/debian/pool/main/o/openssl/libssl1.0.0_1.0.1t-1+deb8u8_amd64.deb \
+  && dpkg -i libssl1.0.0.deb \
+  && rm libssl1.0.0.deb \
+  && RSTUDIO_LATEST=$(wget --no-check-certificate -qO- https://s3.amazonaws.com/rstudio-server/current.ver) \
+  && [ -z "$RSTUDIO_VERSION" ] && RSTUDIO_VERSION=$RSTUDIO_LATEST || true \
+  && wget -q http://download2.rstudio.org/rstudio-server-${RSTUDIO_VERSION}-amd64.deb \
+  && dpkg -i rstudio-server-${RSTUDIO_VERSION}-amd64.deb \
+  && rm rstudio-server-*-amd64.deb \
+  ## Symlink pandoc & standard pandoc templates for use system-wide
+  && ln -s /usr/lib/rstudio-server/bin/pandoc/pandoc /usr/local/bin \
+  && ln -s /usr/lib/rstudio-server/bin/pandoc/pandoc-citeproc /usr/local/bin \
+  && git clone https://github.com/jgm/pandoc-templates \
+  && mkdir -p /opt/pandoc/templates \
+  && cp -r pandoc-templates*/* /opt/pandoc/templates && rm -rf pandoc-templates* \
+  && mkdir /root/.pandoc && ln -s /opt/pandoc/templates /root/.pandoc/templates \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/ \
+  ## RStudio wants an /etc/R, will populate from $R_HOME/etc
+  && mkdir -p /etc/R \
+  ## Write config files in $R_HOME/etc
+  && echo '\n\
+    \n# Configure httr to perform out-of-band authentication if HTTR_LOCALHOST \
+    \n# is not set since a redirect to localhost may not work depending upon \
+    \n# where this Docker container is running. \
+    \nif(is.na(Sys.getenv("HTTR_LOCALHOST", unset=NA))) { \
+    \n  options(httr_oob_default = TRUE) \
+    \n}' >> /usr/local/lib/R/etc/Rprofile.site \
+  && echo "PATH=${PATH}" >> /usr/local/lib/R/etc/Renviron \
+  ## Need to configure non-root user for RStudio
+  && useradd rstudio \
+  && echo "rstudio:rstudio" | chpasswd \
+	&& mkdir /home/rstudio \
+	&& chown rstudio:rstudio /home/rstudio \
+	&& addgroup rstudio staff \
+  ## Prevent rstudio from deciding to use /usr/bin/R if a user apt-get installs a package
+  &&  echo 'rsession-which-r=/usr/local/bin/R' >> /etc/rstudio/rserver.conf \
+  ## use more robust file locking to avoid errors when using shared volumes:
+  && echo 'lock-type=advisory' >> /etc/rstudio/file-locks \
+  ## configure git not to request password each time
+  && git config --system credential.helper 'cache --timeout=3600' \
+  && git config --system push.default simple \
+  ## Set up S6 init system
+  && wget -P /tmp/ https://github.com/just-containers/s6-overlay/releases/download/${S6_VERSION}/s6-overlay-amd64.tar.gz \
+  && tar xzf /tmp/s6-overlay-amd64.tar.gz -C / \
+  && mkdir -p /etc/services.d/rstudio \
+  && echo '#!/usr/bin/with-contenv bash \
+          \n## load /etc/environment vars first: \
+  		  \n for line in $( cat /etc/environment ) ; do export $line ; done \
+          \n exec /usr/lib/rstudio-server/bin/rserver --server-daemonize 0' \
+          > /etc/services.d/rstudio/run \
+  && echo '#!/bin/bash \
+          \n rstudio-server stop' \
+          > /etc/services.d/rstudio/finish \
+  && mkdir -p /home/rstudio/.rstudio/monitored/user-settings \
+  && echo 'alwaysSaveHistory="0" \
+          \nloadRData="0" \
+          \nsaveAction="0"' \
+          > /home/rstudio/.rstudio/monitored/user-settings/user-settings \
+  && chown -R rstudio:rstudio /home/rstudio/.rstudio
+
+RUN apt-get update \
+&& apt-get install -y software-properties-common \
+    apt-transport-https \
+    dirmngr \
     ca-certificates \
-    mono-complete \
-    monodevelop \
-#&& update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc 60 --slave /usr/bin/g++ g++ /usr/bin/g++ \
-&& rm -rf /var/lib/apt/lists/* \
-&& apt-get clean \
-&& apt-get purge
+    curl \
+    gnupg2 \
+    gpg \
+    libc6-i386 \
+    libusb-1.0-0 \
+    libqt5core5a \
+    libqt5serialport5 \
+    build-essential \
+    python-pip \
+    autoconf \
+    libtool \
+    automake \
+    cmake \
+  && rm -rf /var/lib/apt/lists/* \
+  && apt-get clean \
+  && apt-get purge
 
+#RUN wget https://github.com/getopenmono/openmono_package/releases/download/SDKv1_7/openmono_1.7.3.deb \
+#  && dpkg -i openmono_1.7.3.deb
 
-# Here a few code chunks on how to install R packages
-# CRAN packages:
-# RUN Rscript -e "install.packages('PACKAGENAME')"
+RUN apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF \
+  #&& echo "deb https://download.mono-project.com/repo/debian stable-stretch main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list \
+  && apt-get update -y \
+  && apt-get upgrade -y \
+  && apt-get install -y mono-devel \   
+  && rm -rf /var/lib/apt/lists/* \
+  && apt-get clean \
+  && apt-get purge
 
-# Bioconductor packages - until R version 3.4?
-# RUN Rscript -e 'source("http://bioconductor.org/biocLite.R")' -e 'biocLite("fgsea")'
-#
-# Bioconductor packages - starting R version 3.5
-# if (!requireNamespace("BiocManager", quietly = TRUE))
-#     install.packages("BiocManager")
-# BiocManager::install("fgsea", version = "3.8")
-# RUN Rscript -e 'if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")' -e 'BiocManager::install("fgsea", version = "3.8")'
-
-
-RUN Rscript -e 'source("http://bioconductor.org/biocLite.R")' -e 'biocLite("fgsea")'
-RUN Rscript -e 'install.packages("ggplot2")'
-RUN Rscript -e 'install.packages("ggpubr")'
-
-RUN echo '#!/usr/bin/env Rscript \n\
-args = commandArgs(trailingOnly=TRUE) \n\
-if (!(length(args)==2)) { \n\
-  stop("One argument must be supplied ((input file).n)string)", call.=FALSE) \n\
-} \n\
-sayHello <- function(){ \n\
-  writeLines(args[1], args[2]) \n\
-} \n\
-sayHello()' > /usr/bin/sayHello.R# Ubuntu base image 
-FROM ubuntu:18.04
-MAINTAINER Ines Assum <ines.assum@helmholtz-muenchen.de>
-
-# Setting variables to prevent errors at R installation
-ENV TZ=Europe/Minsk
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
-#installation of software
-RUN apt-get update && apt-get install -y software-properties-common \
-&& apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF \
-&& echo "deb https://download.mono-project.com/repo/ubuntu stable-bionic main" | tee /etc/apt/sources.list.d/mono-official-stable.list \
-&& apt update \
-&& apt-get update \
-&& apt-get install -y \
-    r-base \
-    monodevelop \
-#   mono-complete \    
-&& rm -rf /var/lib/apt/lists/* \
-&& apt-get clean \
-&& apt-get purge
-
-RUN Rscript -e 'source("http://bioconductor.org/biocLite.R")' -e 'biocLite("fgsea")'
-#RUN Rscript -e 'install.packages("ggplot2")'
-#RUN Rscript -e 'install.packages("ggpubr")'
+RUN Rscript -e 'if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")' -e 'BiocManager::install("fgsea", version = "3.8")' \
+  && Rscript -e 'install.packages("ranger")' \
+  && Rscript -e 'install.packages("ggplot2")' \
+  && Rscript -e 'install.packages("ggpubr")'
 
 # R scripts: later imported via GitHub
-
 RUN mkdir /data
 
 COPY /files/* /usr/bin/
@@ -107,3 +138,17 @@ RUN chmod a+x /usr/bin/MonaConsoleApp.exe \
 && chmod a+x /usr/bin/sayHello.R \
 && chmod a+x /usr/bin/run_fgsea.R \
 && chmod a+x /usr/bin/run_mona_single.R
+
+COPY userconf.sh /etc/cont-init.d/userconf
+
+## running with "-e ADD=shiny" adds shiny server
+COPY add_shiny.sh /etc/cont-init.d/add
+COPY disable_auth_rserver.conf /etc/rstudio/disable_auth_rserver.conf
+COPY pam-helper.sh /usr/lib/rstudio-server/bin/pam-helper
+
+EXPOSE 8787
+
+## automatically link a shared volume for kitematic users
+VOLUME /home/rstudio/kitematic
+
+CMD ["/init"]
