@@ -1,5 +1,5 @@
-# Rocker r-ver:3.5.1 base image 
-FROM rocker/r-ver:3.5.1
+# Rocker r-ver:3.5.2 base image 
+FROM rocker/r-ver:3.5.2
 MAINTAINER Ines Assum <ines.assum@helmholtz-muenchen.de>
 
 
@@ -58,9 +58,9 @@ RUN apt-get update \
   ## Need to configure non-root user for RStudio
   && useradd rstudio \
   && echo "rstudio:rstudio" | chpasswd \
-	&& mkdir /home/rstudio \
-	&& chown rstudio:rstudio /home/rstudio \
-	&& addgroup rstudio staff \
+  && mkdir /home/rstudio \
+  && chown rstudio:rstudio /home/rstudio \
+  && addgroup rstudio staff \
   ## Prevent rstudio from deciding to use /usr/bin/R if a user apt-get installs a package
   &&  echo 'rsession-which-r=/usr/local/bin/R' >> /etc/rstudio/rserver.conf \
   ## use more robust file locking to avoid errors when using shared volumes:
@@ -74,7 +74,7 @@ RUN apt-get update \
   && mkdir -p /etc/services.d/rstudio \
   && echo '#!/usr/bin/with-contenv bash \
           \n## load /etc/environment vars first: \
-  		  \n for line in $( cat /etc/environment ) ; do export $line ; done \
+        \n for line in $( cat /etc/environment ) ; do export $line ; done \
           \n exec /usr/lib/rstudio-server/bin/rserver --server-daemonize 0' \
           > /etc/services.d/rstudio/run \
   && echo '#!/bin/bash \
@@ -105,26 +105,60 @@ RUN apt-get update \
     libtool \
     automake \
     cmake \
-  && rm -rf /var/lib/apt/lists/* \
-  && apt-get clean \
-  && apt-get purge
-
-#RUN wget https://github.com/getopenmono/openmono_package/releases/download/SDKv1_7/openmono_1.7.3.deb \
-#  && dpkg -i openmono_1.7.3.deb
-
-RUN apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF \
-  #&& echo "deb https://download.mono-project.com/repo/debian stable-stretch main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list \
-  && apt-get update -y \
-  && apt-get upgrade -y \
+  && apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF \
   && apt-get install -y mono-devel \   
   && rm -rf /var/lib/apt/lists/* \
   && apt-get clean \
   && apt-get purge
 
-RUN Rscript -e 'if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")' -e 'BiocManager::install("fgsea", version = "3.8")' \
-  && Rscript -e 'install.packages("ranger")' \
-  && Rscript -e 'install.packages("ggplot2")' \
-  && Rscript -e 'install.packages("ggpubr")'
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+                ghostscript \
+                lmodern \
+                pandoc-citeproc \
+                qpdf \
+                texlive-base \
+                unzip \
+  && rm -rf /var/lib/apt/lists/* \
+  && apt-get clean \
+  && apt-get purge
+
+RUN Rscript -e 'if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")' -e 'BiocManager::install("fgsea", version = "3.8")' -e 'BiocManager::install("BiocStyle")'\
+  && Rscript -e 'install.packages(c("ranger", "ggplot2", "ggpubr", "pROC"), repos = "https://cran.rstudio.com/")'
+
+RUN Rscript -e 'install.packages(c("devtools", "formatr", "knitr", "rmarkdown", "runit", "testthat"), repos = "https://cran.rstudio.com/")'
+
+RUN Rscript -e 'install.packages(c("caTools", "bitops", "rprojroot", "littler", "binb", "linl", "pinp", "tint"), repos = "https://cran.rstudio.com/")'
+
+RUN wget https://cran.r-project.org/src/contrib/Archive/GenABEL.data/GenABEL.data_1.0.0.tar.gz \
+  && wget https://cran.r-project.org/src/contrib/Archive/GenABEL/GenABEL_1.8-0.tar.gz \
+  && Rscript -e 'install.packages("GenABEL.data_1.0.0.tar.gz", repos = NULL, type = "source")' \
+  && Rscript -e 'install.packages("GenABEL_1.8-0.tar.gz", repos = NULL, type = "source")' \
+  && rm -rf GenABEL.data_1.0.0.tar.gz \
+  && rm -rf GenABEL_1.8-0.tar.gz \
+  && Rscript -e 'install.packages("MatrixEQTL", repos = "https://cran.rstudio.com/")'
+
+RUN apt-get install -y unzip \
+  && wget http://s3.amazonaws.com/plink1-assets/plink_linux_x86_64_20181202.zip \
+  && unzip plink_linux_x86_64_20181202.zip -d plink_linux_x86_64_20181202/ \
+  && cd plink_linux_x86_64_20181202 \
+  && mv plink /usr/bin/ \
+  && mv prettify /usr/bin/ \
+  && mv LICENSE /usr/bin/ \
+  && cd ../ \
+  && rm -rf plink_linux_x86_64_20181202 \
+  && rm -rf plink_linux_x86_64_20181202.zip \
+  && rm -rf /tmp/downloaded_packages/ /tmp/*.rds \
+  && rm -rf /var/lib/apt/lists/* \
+  && apt-get clean \
+  && apt-get purge
+
+COPY userconf.sh /etc/cont-init.d/userconf
+
+## running with "-e ADD=shiny" adds shiny server
+COPY add_shiny.sh /etc/cont-init.d/add
+COPY disable_auth_rserver.conf /etc/rstudio/disable_auth_rserver.conf
+COPY pam-helper.sh /usr/lib/rstudio-server/bin/pam-helper
 
 # R scripts: later imported via GitHub
 RUN mkdir /data
@@ -139,16 +173,6 @@ RUN chmod a+x /usr/bin/MonaConsoleApp.exe \
 && chmod a+x /usr/bin/run_fgsea.R \
 && chmod a+x /usr/bin/run_mona_single.R
 
-COPY userconf.sh /etc/cont-init.d/userconf
-
-## running with "-e ADD=shiny" adds shiny server
-COPY add_shiny.sh /etc/cont-init.d/add
-COPY disable_auth_rserver.conf /etc/rstudio/disable_auth_rserver.conf
-COPY pam-helper.sh /usr/lib/rstudio-server/bin/pam-helper
-
 EXPOSE 8787
-
-## automatically link a shared volume for kitematic users
-VOLUME /home/rstudio/kitematic
 
 CMD ["/init"]
