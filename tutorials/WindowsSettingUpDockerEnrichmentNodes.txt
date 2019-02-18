@@ -1,0 +1,16 @@
+Running Docker Enrichment (WINDOWS 10)
+
+Requirements:
+enable virtualization (BIOS + Windows-Features: hyper-V)
+
+1. 	Install Docker Desktop for Windows: https://hub.docker.com/editions/community/docker-ce-desktop-windows
+		Note: Free Account required
+1.5	Check if installation successful by running: docker run hello-world
+
+2. 	Navigate to EnrichmentNodes dockerfile and run: docker build -t enrich:latest .
+		Note: This may take some time doing it for first time (>2h).
+
+3. Start the Container by running: docker run -d -p 8787:8787 -v %cd%:/home/rstudio -e PASSWORD=password enrich:latest
+		Note: Admin priviliges required.
+		
+4. Finally, in your local web browser visit "localhost:8787" to access your docker R-studio. Username: rstudio	Password: password
