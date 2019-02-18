@@ -1,11 +1,11 @@
 Running Docker Enrichment (WINDOWS 10)
 
 Requirements:
-enable virtualization (BIOS + Windows-Features: hyper-V)
+Enable virtualization (BIOS + Windows-Features: hyper-V), Run commands by Win+X and selecting “Command Prompt (Admin).”
 
 1. 	Install Docker Desktop for Windows: https://hub.docker.com/editions/community/docker-ce-desktop-windows
 		Note: Free Account required
-1.5	Check if installation successful by running: docker run hello-world
+1.5	Check if installation successful by running command: docker run hello-world
 
 2. 	Navigate to EnrichmentNodes dockerfile and run: docker build -t enrich:latest .
 		Note: This may take some time doing it for first time (>2h).
