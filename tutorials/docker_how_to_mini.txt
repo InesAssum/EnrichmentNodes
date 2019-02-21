@@ -11,7 +11,7 @@ docker images -a
 docker export immunonodesmod > ImmunoNodesDockerMod.tar
 
 ## load docker image from .tar
-docker load < ImmunoNodesDockerMod.tar
+docker import ImmunoNodesDockerMod.tar immunonodesmod:latest
 
 ## tag a docker
 docker tag 3bdbe08bdc5d immunonodesmod:latest
@@ -35,7 +35,7 @@ chmod a+x sayHello.R
 docker commit fb5c6379bce3 immunonodesmod
 
 ## build docker from dockerfile
-docker build -t enrichi:latest .
+docker build -t enrich:latest .
 
 
 
