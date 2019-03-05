@@ -14,7 +14,7 @@ Enable virtualization (BIOS + Windows-Features: hyper-V), Run commands by Win+X 
 
 	a)	get the DockerEnrich.tar file
 	b)	on the command prompt, navigate to the directory with the .tar-file
-	c)	import the image: docker load < DockerEnrich.tar
+	c)	import the image: docker import < DockerEnrich.tar
 	d)	show all local images: docker images -a
 	e)	get the “IMAGE ID” of the newly imported docker image (should have size 6.37 GB)
 	f)	tag the docker image: docker tag <image_id> enrich:latest
@@ -32,11 +32,3 @@ Enable virtualization (BIOS + Windows-Features: hyper-V), Run commands by Win+X 
 		
 4. Finally, in your local web browser visit "localhost:8787" to access your docker R-studio. Username: rstudio	Password: password
 
-
-2. 	Navigate to EnrichmentNodes dockerfile and run: docker build -t enrich:latest .
-		Note: This may take some time doing it for first time (>2h).
-
-3. Start the Container by running: docker run -d -p 8787:8787 -v %cd%:/home/rstudio -e PASSWORD=password enrich:latest
-		Note: Admin priviliges required.
-		
-4. Finally, in your local web browser visit "localhost:8787" to access your docker R-studio. Username: rstudio	Password: password
