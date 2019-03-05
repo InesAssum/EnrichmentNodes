@@ -2,7 +2,7 @@
 <tool name="mona1" version="1.0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
     <description>One node for multiple enrichment methods.</description>
     <manual>Detailed description goes here. extend to multiple species.</manual>
-    <executableName>run_mona_single.R</executableName>
+    <executableName>runner.R</executableName>
     <PARAMETERS version="1.6.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/Param_1_6_2.xsd">
         <NODE name="mona1" description="Node the runs MONA single species model">
             <ITEM description="Path to the input file" name="input" type="input-file" required="true" supported_formats="*.RData,*.Rdata,*.RDS" value="/usr/data/example_data/mRNA.RDS"/>
@@ -17,31 +17,32 @@
 		</NODE>
 	</PARAMETERS>
 	<cli>
-		<clielement optionIdentifier=" ">
+		<clielement optionIdentifier="--method mona"/>
+		<clielement optionIdentifier="--file">
 			<mapping referenceName="mona1.input"/>
         </clielement>
-        <clielement optionIdentifier="">
+        <clielement optionIdentifier="--out">
             <mapping referenceName="mona1.output"/>
         </clielement>
-		<clielement optionIdentifier="">
+		<clielement optionIdentifier="--gmt">
 			<mapping referenceName="mona1.gmt"/>
 		</clielement>
-		<clielement optionIdentifier="">
+		<clielement optionIdentifier="--minSize">
 			<mapping referenceName="mona1.minSize"/>
 		</clielement>
-        <clielement optionIdentifier="">
+        <clielement optionIdentifier="--maxSize">
             <mapping referenceName="mona1.maxSize"/>
         </clielement>
-        <clielement optionIdentifier="">
+        <clielement optionIdentifier="--cutoff">
             <mapping referenceName="mona1.cutoff"/>
         </clielement>
-        <clielement optionIdentifier="">
+        <clielement optionIdentifier="--sign">
             <mapping referenceName="mona1.sign"/>
         </clielement>
-        <clielement optionIdentifier="">
+        <clielement optionIdentifier="--rev">
             <mapping referenceName="mona1.rev"/>
         </clielement>
-		<clielement optionIdentifier="">
+		<clielement optionIdentifier="--mygmt">
 			<mapping referenceName="mona1.mygmt"/>
 		</clielement>
 

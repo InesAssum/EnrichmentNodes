@@ -2,7 +2,7 @@
 <tool name="gsea" version="1.0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
     <description>Runs GSEA using fgsea R package.</description>
     <manual>Detailed description goes here.</manual>
-    <executableName>run_fgsea.R</executableName>
+    <executableName>runner.R</executableName>
     <PARAMETERS version="1.6.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/Param_1_6_2.xsd">
         <NODE name="gsea" description="Node the runs GSEA">
             <ITEM description="Path to the input file" name="input" type="input-file" required="true" supported_formats="*.RData,*.Rdata,*.RDS" value="/usr/data/example_data/mRNA.RDS"/>
@@ -15,25 +15,26 @@
         </NODE>
     </PARAMETERS>
     <cli>
-        <clielement optionIdentifier=" ">
+		<clielement optionIdentifier="--method gsea"/>
+        <clielement optionIdentifier="--file">
             <mapping referenceName="gsea.input"/>
         </clielement>
-        <clielement optionIdentifier="">
+        <clielement optionIdentifier="--out">
             <mapping referenceName="gsea.output"/>
         </clielement>
-        <clielement optionIdentifier="">
+        <clielement optionIdentifier="--gmt">
             <mapping referenceName="gsea.gmt"/>
         </clielement>
-        <clielement optionIdentifier="">
+        <clielement optionIdentifier="--minSize">
             <mapping referenceName="gsea.minSize"/>
         </clielement>
-        <clielement optionIdentifier="">
+        <clielement optionIdentifier="--maxSize">
             <mapping referenceName="gsea.maxSize"/>
         </clielement>
-        <clielement optionIdentifier="">
+        <clielement optionIdentifier="--nperm">
             <mapping referenceName="gsea.nperm"/>
         </clielement>
-        <clielement optionIdentifier="">
+        <clielement optionIdentifier="--mygmt">
             <mapping referenceName="gsea.mygmt"/>
         </clielement>
     </cli>

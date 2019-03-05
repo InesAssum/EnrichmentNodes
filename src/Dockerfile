@@ -117,7 +117,7 @@ RUN apt-get update \
                 lmodern \
                 pandoc-citeproc \
                 qpdf \
-                texlive-base \
+                #texlive-full \
                 unzip \
   && rm -rf /var/lib/apt/lists/* \
   && apt-get clean \
@@ -129,6 +129,8 @@ RUN Rscript -e 'if (!requireNamespace("BiocManager", quietly = TRUE)) install.pa
 RUN Rscript -e 'install.packages(c("devtools", "formatr", "knitr", "rmarkdown", "runit", "testthat"), repos = "https://cran.rstudio.com/")'
 
 RUN Rscript -e 'install.packages(c("caTools", "bitops", "rprojroot", "littler", "binb", "linl", "pinp", "tint"), repos = "https://cran.rstudio.com/")'
+
+RUN Rscript -e 'install.packages(c("optparse"), repos = "https://cran.rstudio.com/")'
 
 RUN wget https://cran.r-project.org/src/contrib/Archive/GenABEL.data/GenABEL.data_1.0.0.tar.gz \
   && wget https://cran.r-project.org/src/contrib/Archive/GenABEL/GenABEL_1.8-0.tar.gz \
@@ -170,8 +172,8 @@ COPY /data/gmt/* /data/gmt/
 
 RUN chmod a+x /usr/bin/MonaConsoleApp.exe \
 && chmod a+x /usr/bin/sayHello.R \
-&& chmod a+x /usr/bin/run_fgsea.R \
-&& chmod a+x /usr/bin/run_mona_single.R
+&& chmod a+x /usr/bin/enrichment_function_library.R \
+&& chmod a+x /usr/bin/runner.R
 
 EXPOSE 8787
 
