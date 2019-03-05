@@ -8,13 +8,13 @@ docker images
 docker images -a
 
 ## save a docker image as .tar
-docker save immunonodesmod > ImmunoNodesDockerMod.tar
+docker save enrich:latest > DockerEnrich.tar
 
 ## load docker image from .tar
-docker load ImmunoNodesDockerMod.tar immunonodesmod:latest
+docker load DockerEnrich.tar enrich:latest
 
 ## tag a docker
-docker tag 3bdbe08bdc5d immunonodesmod:latest
+docker tag 3bdbe08bdc5d enrich:1.2
 
 ## delete <multiple/a> docker image
 docker rmi ... ...
