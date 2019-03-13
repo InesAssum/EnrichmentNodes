@@ -14,7 +14,7 @@ A target definition defines the set of KNIME Extensions and Integrations which w
 ## Importing Custom Nodes:
 1. From Eclipse Select File -> Open Projects from filesystem. Navigate to your GenericKnimeNodes/generated_plugins directory and import the root folder of the latest EnrichmentNodes.  
 Note: The Validation may show problems concerning plugins built for different platforms which can be ignored. The Eclipse workspace should now look like this.
-![Final Eclipse workspace](/imgs/EclipseWorkspace.png)
+![Final Eclipse workspace](../blob/master/imgs/EclipseWorkspace.png)
 2. Finally, start your KNIME SDK instance by right clicking KNIME-AP-complete.target -> Run as -> Run configurations... :  
 Select org.knime.product.KNIME_PRODUCT from the run a product dropdown menu.  
 ![RunAs](/imgs/RunAsKnime.png)
