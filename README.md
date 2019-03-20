@@ -48,10 +48,6 @@ Generic Knime Nodes (GKN):
 git clone https://github.com/genericworkflownodes/GenericKnimeNodes/
 ```
 
-for a nice example, also checkout Benjamin Schubert's ImmunoNodes:
-```
-git clone https://github.com/FRED-2/ImmunoNodes/
-```
 
 Really quick how-to:
 -------------------
@@ -119,6 +115,10 @@ Goal of the project is to create really detailed tutorials starting from scratch
 * KNIME setup and node development
 * hopefully all the stuff, that is totally logical now but took us weeks to figure out!
 
+for a nice example, also checkout Benjamin Schubert's ImmunoNodes:
+```
+git clone https://github.com/FRED-2/ImmunoNodes/
+```
 
 Need help?
 ----------
@@ -127,6 +127,8 @@ Come join our slack workspace!
 ```
 https://join.slack.com/t/knime-setup/shared_invite/enQtNTMwMzk4NDE0MjQ2LTMwZDhmYmI2YjdhNDdmNmFmNTY3MDE4NzZiOGY0MWJkNWE5OTkwNjRkYzI1YzYwYWM5YjRlZDZjODg0MmFmMzA
 ```
+
+
 
 References:
 -----------
