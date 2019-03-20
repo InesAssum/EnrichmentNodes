@@ -57,7 +57,7 @@ on the shell, change to your desired working directory and execute:
 ```
 docker run -d -p 8787:8787 -v %cd%:/home/rstudio -e PASSWORD=password enrich:latest
 ```
-visit `localholst:8787` to enjoy your interactive rstudio version!
+visit `localholst:8787` to enjoy your interactive rstudio session with the `user: rstudio` and `pw: password`!
 
 ### KNIME
 * start KNIME 3.7 and enjoy our nodes under `Community Nodes/EnrichmentNodes`
