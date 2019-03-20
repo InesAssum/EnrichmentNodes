@@ -56,17 +56,17 @@ git clone https://github.com/FRED-2/ImmunoNodes/
 Really quick how-to:
 -------------------
 
-## Use our R framework with the enrich docker:
+### Use our R framework with the enrich docker:
 on the shell, change to your desired working directory and execute:
 ```
 docker run -d -p 8787:8787 -v %cd%:/home/rstudio -e PASSWORD=password enrich:latest
 ```
 visit `localholst:8787` to enjoy your interactive rstudio version!
 
-## KNIME
+### KNIME
 * start KNIME 3.7 and enjoy our nodes under `Community Nodes/EnrichmentNodes`
 
-## Develop your own nodes
+### Develop your own nodes
 * write an R script or commandline tool that extends our existing R functions
 * include all necessary scripts/executables in the src/files/ folder
 * modify the existing or create a new docker, make sure that the scripts are executable
@@ -76,7 +76,7 @@ visit `localholst:8787` to enjoy your interactive rstudio version!
 * detailed tutorials will come later!
 
 
-## everything else: checkout
+### everything else: checkout
 ```
 https://github.com/InesAssum/EnrichmentNodes/tutorials
 ```
@@ -85,32 +85,34 @@ https://github.com/InesAssum/EnrichmentNodes/tutorials
 Contents
 --------
 
-## src
+### src
 
 All files (including Dockerfile) for our enrich docker image. The `files` folder contains all code for the modular R framework.
 
 
-## knime
+### knime
 
 This directory contains all the files needed for building the EnrichmentNodes via ant.
 
-### descriptors:
+#### descriptors:
 contain one .ctd file per node that determines the graphical interface and the input/output ports
 
-### plugin.properties
+#### plugin.properties
 define the details of your plugin and the dockers used for executing each tool
 
-### DESCRIPTION
-### COPYRIGHT
-### LICENSE
+#### DESCRIPTION
+
+#### COPYRIGHT
+
+#### LICENSE
 
 
-## examples
+### examples
 
 Here you can find example data and scripts to toy around with in R as well as workflows you can try in KNIME.
 
 
-## tutorials
+### tutorials
 
 Goal of the project is to create really detailed tutorials starting from scratch for
 * methods / best practices / parameter description
