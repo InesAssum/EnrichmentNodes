@@ -6,6 +6,7 @@ data_local
 results_local
 *.vcf
 *.vcf.bgz
+__MACOSX
 
 
 # History files
