@@ -9,15 +9,16 @@ git clone https://github.com/InesAssum/EnrichmentNodes
 Licensing:
 ---------
 
-The EnrichmentNodes source code is published under a ...I have no idea... license. The licenses of the individual applications 
-integrated into EnrichmentNodes can be found in LICENSE.
+The EnrichmentNodes source code is published under a GPL3 license. The licenses of the individual applications 
+integrated into EnrichmentNodes can be found in LICENSE and below.
 
 * KNIME: General Public License v3
 * Docker: Apache License v2.0
 * Generic KNIME Nodes: Apache License v2.0
 * R/Rstudio: AGPL v3
 * mono: https://github.com/mono/mono/blob/master/LICENSE
-* MONA: academic, non-commercial use only
+* MONA: academic, non-commercial use only (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3834824/)
+Sass S, Buettner F, Mueller NS, Theis FJ. A modular framework for gene set analysis integrating multilevel omics data. Nucleic Acids Res. 2013 Nov;41(21):9622-33. doi: 10.1093/nar/gkt752. Epub 2013 Aug 23. PubMed PMID: 23975194; PubMed Central PMCID: PMC3834824.
 
 
 Prerequisites:
