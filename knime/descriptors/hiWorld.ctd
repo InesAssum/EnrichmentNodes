@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <tool name="hiWorld" version="1.0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
-    <description>Test node hello world.</description>
-    <manual>Designed to work with the enrich docker.</manual>
+    <description>Simple Hello World test node.</description>
+    <manual>Designed to test if KNIME and Docker installation were succesfull with the enrich docker.</manual>
     <executableName>sayHello.R</executableName>
     <PARAMETERS version="1.6.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/Param_1_6_2.xsd">
         <NODE name="hiWorld" description="hello world test node">

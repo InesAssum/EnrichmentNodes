@@ -1,16 +1,16 @@
 <?xml version="1.0" ?>
 <tool name="gsea" version="1.0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
-    <description>Runs GSEA using fgsea R package.</description>
-    <manual>Detailed description goes here.</manual>
+    <description>Runs GSEA using bioconductors fgsea R package.</description>
+    <manual>Runs preranked gene set enrichment analysis. From Bioconductor: The package implements an algorithm for fast gene set enrichment analysis. Using the fast algorithm allows to make more permutations and get more fine grained p-values, which allows to use accurate stantard approaches to multiple hypothesis correction..</manual>
     <executableName>runner.R</executableName>
     <PARAMETERS version="1.6.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/Param_1_6_2.xsd">
-        <NODE name="gsea" description="Node the runs GSEA">
+        <NODE name="gsea" description="Node to run GSEA">
             <ITEM description="Path to the input file" name="input" type="input-file" required="true" supported_formats="*.RData,*.Rdata,*.RDS" value="/usr/data/example_data/mRNA.RDS"/>
-            <ITEM description="Output - connect to output node" name="output" type="output-file" required="true" supported_formats="*.RDS" value=""/>
-            <ITEM description="GMT file used for pathway definition" name="gmt" restrictions="GO,KEGG,custom" type="string" value="KEGG"/>
-            <ITEM description="min Size" name="minSize" restrictions="0:1000" type="int" value="15"/>
-            <ITEM description="max Size" name="maxSize" restrictions="1:1000" type="int" value="500"/>
-            <ITEM description="Permutations" name="nperm" restrictions="100:1000000000" type="int" value="10000"/>
+            <ITEM description="Output - connect to output node. Returns .RDS object." name="output" type="output-file" required="true" supported_formats="*.RDS" value=""/>
+            <ITEM description="GMT file used for pathway definition. Select custom to provide your own gmt file. " name="gmt" restrictions="GO,KEGG,custom" type="string" value="KEGG"/>
+            <ITEM description="Minimal size of a gene set to test. All pathways below the threshold are excluded." name="minSize" restrictions="0:1000" type="int" value="15"/>
+            <ITEM description="Maximal size of a gene set to test. All pathways above the threshold are excluded." name="maxSize" restrictions="1:1000" type="int" value="500"/>
+            <ITEM description="Number of permutations to do. Minimal possible nominal p-value is about 1/nperm." name="nperm" restrictions="100:1000000000" type="int" value="10000"/>
             <ITEM description="custom GS definition" name="mygmt" supported_formats="*.gmt" required="false" type="input-file" value=""/>
         </NODE>
     </PARAMETERS>

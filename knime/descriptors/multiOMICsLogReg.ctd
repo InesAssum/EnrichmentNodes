@@ -1,0 +1,33 @@
+<?xml version="1.0" ?>
+<tool name="multiOMICsLogReg" version="1.0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
+    <description>Runs logistic regression of phenotypes on two OMICs data sets.</description>
+    <manual>Runs logistic regression on trait of interest and other phenotypes on two OMICs data sets. Trait must be a column in phenotypes data. (File format: probes x genes with reow and col names).</manual>
+    <executableName>multiOMICs_logregression.R</executableName>
+    <PARAMETERS version="1.6.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/Param_1_6_2.xsd">
+        <NODE name="multiOMICsLogReg" description="Node to run multi logistic regression">
+            <ITEM description="Output - connect to output node" name="output" type="output-file" required="true" supported_formats="*.RDS" value=""/>
+            <ITEM description="Species1: file" name="spec1" type="input-file" required="true" supported_formats="*.RData,*.Rdata,*.RDS" value="/usr/data/example_data/mRNA.RDS"/>
+        	<ITEM description="Species2: file" name="spec2" type="input-file" required="true" supported_formats="*.RData,*.Rdata,*.RDS" value="/usr/data/example_data/mRNA.RDS"/>
+        	<ITEM description="Phenotype file" name="pheno" type="input-file" required="true" supported_formats="*.RData,*.Rdata,*.RDS" value="/usr/data/example_data/mRNA.RDS"/>
+        	<ITEM description="Trait of Interest" name="trait" type="string" value="trait"/>
+        </NODE>
+    </PARAMETERS>
+    <cli>
+        <clielement optionIdentifier="--out">
+            <mapping referenceName="multiOMICsLogReg.output"/>
+        </clielement>
+        <clielement optionIdentifier="--species1">
+            <mapping referenceName="multiOMICsLogReg.spec1"/>
+        </clielement>
+        <clielement optionIdentifier="--species2">
+            <mapping referenceName="multiOMICsLogReg.spec2"/>
+        </clielement>
+        <clielement optionIdentifier="--pheno">
+            <mapping referenceName="multiOMICsLogReg.pheno"/>
+        </clielement>
+        <clielement optionIdentifier="--trait">
+            <mapping referenceName="multiOMICsLogReg.trait"/>
+        </clielement>
+    </cli>
+</tool>
+

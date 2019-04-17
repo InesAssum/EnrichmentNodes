@@ -1,49 +1,54 @@
 <?xml version="1.0" ?>
-<tool name="mona1" version="1.0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
-    <description>Runs MONA single species model.</description>
+<tool name="mona2" version="1.0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
+    <description>Runs MONA two species cooperative model.</description>
     <manual>MONA - Multilevel ONtology Analysis is a model-based Bayesian method for inferring interpretable pathway term probabilities in a modular C# framework.</manual>
     <executableName>runner.R</executableName>
     <PARAMETERS version="1.6.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/Param_1_6_2.xsd">
-        <NODE name="mona1" description="Runs MONA single species model.">
-            <ITEM description="Path to the input file" name="input" type="input-file" required="true" supported_formats="*.RData,*.Rdata,*.RDS" value="/usr/data/example_data/mRNA.RDS"/>
+        <NODE name="mona2" description="Runs MONA two species cooperative model.">
+            <ITEM description="Path to the input file (species 1)" name="input" type="input-file" required="true" supported_formats="*.RData,*.Rdata,*.RDS" value="/usr/data/example_data/mRNA.RDS"/>
+            <ITEM description="Path to the input file (species 2)" name="input2" type="input-file" required="true" supported_formats="*.RData,*.Rdata,*.RDS" value="/usr/data/example_data/mRNA.RDS"/>
             <ITEM description="GMT file used for pathway definition. Select custom to provide your own gmt file. " name="gmt" restrictions="GO,KEGG,custom" type="string" value="KEGG"/>
             <ITEM description="Minimal size of a gene set to test. All pathways below the threshold are excluded." name="minSize" restrictions="0:1000" type="int" value="15"/>
             <ITEM description="Maximal size of a gene set to test. All pathways above the threshold are excluded." name="maxSize" restrictions="1:1000" type="int" value="500"/>
-            <ITEM description="Expression avlues below significance cutoff will be exluded." name="cutoff" restrictions="0:10000000" type="float" value="0.05"/>
+            <ITEM description="Species 1: Expression values below (or above) significance cutoff will be exluded." name="cutoff" restrictions="0:10000000" type="float" value="0.05"/>
+          	<ITEM description="Species 2: Expression values below (or above) significance cutoff will be exluded." name="cutoff2" restrictions="0:10000000" type="float" value="0.05"/>
             <ITEM description="Includes direction of effect in the analysis." name="sign" restrictions="yes,no" type="string" value="yes"/>
-            <ITEM description="Are small or big absolute values significant?" name="rev" restrictions="small,big" type="string" value="small"/>
+            <ITEM description="Are small or big absolute values significant? (below or above cutoff)" name="rev" restrictions="small,big" type="string" value="small"/>
             <ITEM description="custom GS definition" name="mygmt" supported_formats="*.gmt" required="false" type="input-file" value=""/>
             <ITEM description="Output - connect to output node. Returns .RDS object." name="output" type="output-file" required="true" supported_formats="*.RDS" value=""/>
 		</NODE>
 	</PARAMETERS>
 	<cli>
-		<clielement optionIdentifier="--method mona"/>
+		<clielement optionIdentifier="--method mona2d"/>
 		<clielement optionIdentifier="--file">
-			<mapping referenceName="mona1.input"/>
+			<mapping referenceName="mona2.input"/>
+        </clielement>
+        <clielement optionIdentifier="--file2">
+			<mapping referenceName="mona2.input"/>
         </clielement>
         <clielement optionIdentifier="--out">
-            <mapping referenceName="mona1.output"/>
+            <mapping referenceName="mona2.output"/>
         </clielement>
 		<clielement optionIdentifier="--gmt">
-			<mapping referenceName="mona1.gmt"/>
+			<mapping referenceName="mona2.gmt"/>
 		</clielement>
 		<clielement optionIdentifier="--minSize">
-			<mapping referenceName="mona1.minSize"/>
+			<mapping referenceName="mona2.minSize"/>
 		</clielement>
         <clielement optionIdentifier="--maxSize">
-            <mapping referenceName="mona1.maxSize"/>
+            <mapping referenceName="mona2.maxSize"/>
         </clielement>
-        <clielement optionIdentifier="--cutoff">
-            <mapping referenceName="mona1.cutoff"/>
+        <clielement optionIdentifier="--cutoff2">
+            <mapping referenceName="mona2.cutoff2"/>
         </clielement>
         <clielement optionIdentifier="--sign">
-            <mapping referenceName="mona1.sign"/>
+            <mapping referenceName="mona2.sign"/>
         </clielement>
         <clielement optionIdentifier="--rev">
-            <mapping referenceName="mona1.rev"/>
+            <mapping referenceName="mona2.rev"/>
         </clielement>
 		<clielement optionIdentifier="--mygmt">
-			<mapping referenceName="mona1.mygmt"/>
+			<mapping referenceName="mona2.mygmt"/>
 		</clielement>
 
 	</cli>

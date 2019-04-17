@@ -2,7 +2,7 @@
 args = commandArgs(trailingOnly=TRUE)
 
 if (!(length(args)==2)) {
-  stop("One argument must be supplied ((input file).n)string)", call.=FALSE)
+  stop("Two argument must be supplied ((input file).n)string)", call.=FALSE)
 }
 
 sayHello <- function(){

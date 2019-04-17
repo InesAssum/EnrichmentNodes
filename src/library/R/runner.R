@@ -18,14 +18,16 @@
 
 # ------------------------------------------------------------------------------
 ######### library #############
-getwd()
+# getwd()
 library("optparse")
 ######### args ################
 option_list = list(
   make_option(c("-m", "--method"), type="character", default="gsea", 
-              help="Method to use: gsea, mona, randomforest (default: gsea)"), 
+              help="Method to use: gsea, mona, mona2d, randomforest (default: gsea)"), 
   make_option(c("-f", "--file"), type="character", default=NULL,
               help="dataset file name"),
+  make_option( "--file2", type="character", default=NULL,
+              help="dataset file name of species 2 (mona 2d)"),
   make_option(c("-g", "--gmt"), type="character", default="KEGG",
               help="filepath to gmt pathway definitions (default:KEGG)"),
   make_option("--minSize", default=5, type = "integer",
@@ -38,8 +40,10 @@ option_list = list(
               help="output file name [default= out.RDS]"),
   make_option(c("--cutoff", "-c"), type="double", default="25",
               help="MONA: cutoff (default: 25)"),
-  make_option(c("--sign", "-s"), type="character", default="no",
-              help="MONA: sign (default: no)"),
+  make_option("--cutoff2", type="double", default="25",
+              help="MONA2d: cutoff species 2 (default: 25)"),
+  make_option(c("--sign", "-s"), type="character", default="yes",
+              help="MONA: sign (default: yes)"),
   make_option(c("--rev", "-r"), type="character", default="small",
               help="MONA: rev (default: small)"),
   make_option("--debug", type="logical", default="T",
@@ -53,12 +57,14 @@ opt = parse_args(opt_parser);
 
 method  <- opt$method
 data    <- opt$file
+data2   <- opt$file2
 out     <- opt$out
 gmt     <- opt$gmt
 minSize <- opt$minSize
 maxSize <- opt$maxSize
 nperm   <- opt$nperm
 cutoff  <- opt$cutoff
+cutoff2 <- opt$cutoff2
 rev     <- opt$rev
 sign    <- opt$sign
 mygmt   <- opt$mygmt
@@ -67,7 +73,7 @@ debug   <- opt$debug
 ######### src ##################
 # add methods. Method has to have function named runMETHODNAME.
 source("/usr/bin/enrichment_function_library.R")
-getwd()
+#getwd()
 #print(paste(method, data, gmt, minSize, maxSize, nperm, cutoff, sign, rev, mygmt, out, debug, sep = " "))
 ################################
 if(gmt=="custom"){
@@ -85,7 +91,7 @@ if (method =="gsea"){
     getwd()
   }
   result <- run_gsea(data, gmt, nperm, minSize, maxSize, debug)
-  save(result, file = out)
+  saveRDS(result, file = out)
 }
 if (method =="mona"){
   if(debug){
@@ -93,7 +99,15 @@ if (method =="mona"){
     getwd()
   }
   result <- run_mona1(data, gmt, minSize, maxSize, cutoff, sign, rev, debug)
-  save(result, file = out)
+  saveRDS(result, file = out)
+}
+if (method =="mona2d"){
+  if(debug){
+    print(paste(method, data, data2, gmt, minSize, maxSize, nperm, cutoff, cutoff2, sign, rev, mygmt, out, debug, sep = " "))
+    getwd()
+  }
+  result <- run_mona2(data, data2, gmt, minSize, maxSize, cutoff, cutoff2, sign, rev, debug)
+  saveRDS(result, file = out)
 }
 if (method =="randomforest"){
   print(paste0(method," is not available. Please try different method."))

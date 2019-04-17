@@ -18,6 +18,7 @@ RUN apt-get update \
     file \
     git \
     libapparmor1 \
+    libxml2-dev \
     libcurl4-openssl-dev \
     libedit2 \
     libssl-dev \
@@ -130,7 +131,7 @@ RUN Rscript -e 'install.packages(c("devtools", "formatr", "knitr", "rmarkdown", 
 
 RUN Rscript -e 'install.packages(c("caTools", "bitops", "rprojroot", "littler", "binb", "linl", "pinp", "tint"), repos = "https://cran.rstudio.com/")'
 
-RUN Rscript -e 'install.packages(c("optparse"), repos = "https://cran.rstudio.com/")'
+RUN Rscript -e 'install.packages(c("optparse","XML","plyr","reshape2","R.utils"), repos = "https://cran.rstudio.com/")'
 
 RUN wget https://cran.r-project.org/src/contrib/Archive/GenABEL.data/GenABEL.data_1.0.0.tar.gz \
   && wget https://cran.r-project.org/src/contrib/Archive/GenABEL/GenABEL_1.8-0.tar.gz \
@@ -165,15 +166,17 @@ COPY pam-helper.sh /usr/lib/rstudio-server/bin/pam-helper
 # R scripts: later imported via GitHub
 RUN mkdir /data
 
-COPY /files/* /usr/bin/
-COPY /files/Release/* /usr/bin/
+COPY /library/* /usr/bin/
+COPY /library/binaries/* /usr/bin/
 COPY /data/example_data/* /data/example_data/
 COPY /data/gmt/* /data/gmt/
 
 RUN chmod a+x /usr/bin/MonaConsoleApp.exe \
 && chmod a+x /usr/bin/sayHello.R \
 && chmod a+x /usr/bin/enrichment_function_library.R \
-&& chmod a+x /usr/bin/runner.R
+&& chmod a+x /usr/bin/runner.R \
+&& chmod a+x /usr/bin/multiOMICs_logregression.R \
+&& chmod a+x /usr/bin/get_gmt.R
 
 EXPOSE 8787
 

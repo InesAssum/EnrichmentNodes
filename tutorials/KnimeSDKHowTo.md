@@ -8,7 +8,7 @@ Next, select the latest release (releases/2018-12). Next, next, next  and press 
 A target definition defines the set of KNIME Extensions and Integrations which will be available when starting your KNIME Analytics Platform development version. Double click KNIME-AP-complete.target and click Set as Active Target Platform. Note: Resolving the targets for the first time may take a while (>10 min).
 
 ## Importing GenericKnimeNodes to Eclipse Workspace:
-1. Clone or download [GKN](https://github.com/genericworkflownodes/GenericKnimeNodes) to your local hard drive in case you haven’t already.
+1. Clone or download [GKN](https://github.com/genericworkflownodes/GenericKnimeNodes) to your local hard drive in case you haven’t already. Switch to your GenericKnimeNodes directory and call `ant .` on it.
 2. From Eclipse Select File -> Open Projects from filesystem. Navigate to your GenericKnimeNodes directory and import com.genericworkflownodes.knime and com.genericworkflownodes.knime.config. 
 
 ## Importing Custom Nodes:
@@ -20,3 +20,8 @@ Select org.knime.product.KNIME_PRODUCT from the run a product dropdown menu.
 ![RunAs](http://ascgitlab.helmholtz-muenchen.de/ines.assum/EnrichmentNodes/raw/master/tutorials/imgs/RunAsKnime.png)
 Click Run. 
  You can now use KNIME SDK. Note that to install new software in KNIME SDK you have to add it to target definition in Eclipse. 
+ 
+ ## Exporting Custom Nodes as KNIME Plugins:
+ 1. Right click your node, select Export... 
+ 2. Select Plug-in Development/Deployable plug-ins and fragments. Select your node, enter a destination and hit finish. 
+ Note: This will create a jar file that can be used for regular KNIME by moving it to its plugins directory (Applications/Knime/Eclipse/plugins/)
