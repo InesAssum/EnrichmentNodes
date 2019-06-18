@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<tool name="evaluatePred" version="1.0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
+    <description>Evaluates pathway enrichment prediction for a simulation.</description>
+    <manual>Method to evaluate pathway enrichment prediction for a simulation producing a png.</manual>
+    <executableName>evaluatePred.R</executableName>
+    <PARAMETERS version="1.6.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/Param_1_6_2.xsd">
+        <NODE name="evaluatePred" description="Node for evaluation perfomance of a prediction">
+            <ITEM description="Output - connect to output node" name="output" type="output-file" required="true" supported_formats="*.png" value=""/>
+        	<ITEM description="Consider direction of regulutaion?" name="sign" restrictions="yes,no" type="string" value="yes"/>
+        	<ITEM description="Prediction file" name="pred" type="input-file" required="true" supported_formats="*.rds" value=""/>
+        	<ITEM description="Simulated Z-Scores" name="simZ" type="input-file" required="true" supported_formats="*.rds" value=""/>
+        	
+        </NODE>
+    </PARAMETERS>
+    <cli>
+        <clielement optionIdentifier="--out">
+            <mapping referenceName="evaluatePred.output"/>
+        </clielement>
+        <clielement optionIdentifier="--sign">
+            <mapping referenceName="evaluatePred.sign"/>
+        </clielement>
+        <clielement optionIdentifier="--pred">
+            <mapping referenceName="evaluatePred.pred"/>
+        </clielement>
+        <clielement optionIdentifier="--gtruth">
+            <mapping referenceName="evaluatePred.simZ"/>
+        </clielement>
+    </cli>
+</tool>
+

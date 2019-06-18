@@ -176,7 +176,9 @@ RUN chmod a+x /usr/bin/MonaConsoleApp.exe \
 && chmod a+x /usr/bin/enrichment_function_library.R \
 && chmod a+x /usr/bin/runner.R \
 && chmod a+x /usr/bin/multiOMICs_logregression.R \
-&& chmod a+x /usr/bin/get_gmt.R
+&& chmod a+x /usr/bin/get_gmt.R \
+&& chmod a+x /usr/bin/simZscores.R \
+&& chmod a+x /usr/bin/evaluatePred.R
 
 EXPOSE 8787
 

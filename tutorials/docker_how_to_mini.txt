@@ -37,11 +37,6 @@ docker commit fb5c6379bce3 immunonodesmod
 ## build docker from dockerfile
 docker build -t enrich:latest .
 
-## Push to docker hub
-docker login
-docker tag <id> inesassum/enrich:latest
-docker push inesassum/enrich:latest
-
 
 
 

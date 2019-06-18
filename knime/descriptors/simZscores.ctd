@@ -1,0 +1,58 @@
+<?xml version="1.0" ?>
+<tool name="simZscores" version="1.0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
+    <description>Simulates correlated Z-scores for mRNA and proteins.</description>
+    <manual>Method to simulate Z-scores for two correlated molecular species. </manual>
+    <executableName>simZscores.R</executableName>
+    <PARAMETERS version="1.6.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/Param_1_6_2.xsd">
+        <NODE name="simZscores" description="Node for simulating Z-Scores of two moleular species.">
+            <ITEM description="Output species 1 - connect to output node" name="output1" type="output-file" required="true" supported_formats="*.rds" value=""/>
+            <ITEM description="Output species 2 - connect to output node" name="output2" type="output-file" required="true" supported_formats="*.rds" value=""/>
+            <ITEM description="Output ground truth - connect to output node" name="outputT" type="output-file" required="true" supported_formats="*.rds" value=""/>
+            <ITEM description="GMT File" name="gmt" type="string" value="0.25"/>
+            <ITEM description="Coverage" name="coverage" restrictions="0:1" type="float" value="0.25"/>
+        	<ITEM description="Correlation coefficient" name="rho" restrictions="0:1" type="float" value="0.5"/>
+        	<ITEM description="Error rate alpha" name="alpha" restrictions="0:1" type="float" value="0.1"/>
+        	<ITEM description="Error rate beta" name="beta" restrictions="0:1" type="float" value="0.1"/>
+        	<ITEM description="Signal Standard Deviation" name="sigma" restrictions="1:20" type="int" value="10"/>
+			<ITEM description="MinSize of Pathways" name="minSize" restrictions="0:50" type="int" value="10"/>
+        	<ITEM description="Include downregulated pathways?" name="sign" restrictions="yes,no" type="string" value="yes"/>
+
+        </NODE>
+    </PARAMETERS>
+    <cli>
+        <clielement optionIdentifier="--out1">
+            <mapping referenceName="simZscores.output1"/>
+        </clielement>
+                <clielement optionIdentifier="--out2">
+            <mapping referenceName="simZscores.output2"/>
+        </clielement>
+                <clielement optionIdentifier="--outT">
+            <mapping referenceName="simZscores.outputT"/>
+        </clielement>
+        <clielement optionIdentifier="--gmt">
+            <mapping referenceName="simZscores.gmt"/>
+        </clielement>
+        <clielement optionIdentifier="--cov">
+            <mapping referenceName="simZscores.coverage"/>
+        </clielement>
+        <clielement optionIdentifier="--rho">
+            <mapping referenceName="simZscores.rho"/>
+        </clielement>
+        <clielement optionIdentifier="--alpha">
+            <mapping referenceName="simZscores.alpha"/>
+        </clielement>
+        <clielement optionIdentifier="--beta">
+            <mapping referenceName="simZscores.beta"/>
+        </clielement>
+        <clielement optionIdentifier="--sigma">
+            <mapping referenceName="simZscores.sigma"/>
+        </clielement>
+        <clielement optionIdentifier="--min">
+            <mapping referenceName="simZscores.minSize"/>
+        </clielement>
+        <clielement optionIdentifier="--sign">
+            <mapping referenceName="simZscores.sign"/>
+        </clielement>
+    </cli>
+</tool>
+
