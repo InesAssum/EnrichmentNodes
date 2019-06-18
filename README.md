@@ -74,9 +74,7 @@ visit `localholst:8787` to enjoy your interactive rstudio session with the `user
 
 
 ### everything else: checkout
-```
 https://github.com/InesAssum/EnrichmentNodes/tutorials
-```
 
 
 Contents
@@ -125,9 +123,9 @@ Need help?
 ----------
 
 Come join our slack workspace!
-```
+
 https://join.slack.com/t/knime-setup/shared_invite/enQtNTMwMzk4NDE0MjQ2LTMwZDhmYmI2YjdhNDdmNmFmNTY3MDE4NzZiOGY0MWJkNWE5OTkwNjRkYzI1YzYwYWM5YjRlZDZjODg0MmFmMzA
-```
+
 
 
 
