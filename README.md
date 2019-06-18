@@ -74,7 +74,7 @@ visit `localholst:8787` to enjoy your interactive rstudio session with the `user
 
 
 ### everything else: checkout
-https://github.com/InesAssum/EnrichmentNodes/tutorials
+[Our tutorials](tutorials/)
 
 
 Contents
