@@ -119,7 +119,7 @@ saveRDS(my_logreg(pheno, spec1, spec2, trait), out)
 
 ###############################
 ########## DEBUGGING ##########
-pheno           <- "Documents/AFHRI_B/AFHRI_B/phenotypes.RDS"
+# pheno           <- "Documents/AFHRI_B/AFHRI_B/phenotypes.RDS"
 # spec1           <- "Documents/AFHRI_B/AFHRI_B/expr_example_short.RDS"
 # spec2           <- "Documents/AFHRI_B/AFHRI_B/prot_example.RDS"
 # out             <- "Documents/AFHRI_B/AFHRI_B/test_out.RDS"

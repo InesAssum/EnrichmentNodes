@@ -1,1 +1,4 @@
-KNIME nodes based on generic KNIME nodes that integrate multiple (multiOMIC) enrichment methods
+Enrichment nodes 2.0
+
+This is a summary of enrichment tools for multi-omics pathways analyses.
+See the different nodes for detailed information.

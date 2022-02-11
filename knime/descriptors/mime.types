@@ -3,6 +3,7 @@ application/x-RDS RDS
 application/x-RData RData
 application/x-Rdata Rdata
 text/TSV tsv
+text/TSV txt
 text/CSV csv
 text/FASTA fasta
 text/FASTQ fastq
@@ -13,3 +14,6 @@ application/x-fasta fa fasta
 application/x-fastq fq fastq
 application/x-sam sam
 application/x-bam bam
+application/vnd.openxmlformats-officedocument.spreadsheetml.sheet xlsx
+application/vnd.ms-excel xls
+application/tar+gzip tar.gz

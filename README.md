@@ -28,10 +28,10 @@ Prerequisites:
 
 and for using our nodes in KNIME:
 
-2) KNIME Analytics platform, we suggest version 3.7 (https://www.knime.com/downloads)
-3) place the `export_plugin/plugins/de.enrichment_1.2.0.0.jar` under
-  - Windows: `C:/Programme/KNIME 3.7.0/plugins`
-  - Mac: `/⁨Applications/⁨KNIME 3.7.0.app⁩/Contents/Eclipse⁩/plugins⁩`
+2) KNIME Analytics platform, we suggest version 4.3.4 or higher (https://www.knime.com/downloads)
+3) place the `export_plugin/en.enrichment_2.0.1.2.jar` under
+  - Windows: `C:/Programme/KNIME 4.3.4/plugins`
+  - Mac: `/⁨Applications/⁨KNIME 4.3.4.app⁩/Contents/Eclipse⁩/plugins⁩`
   - Linux: ``
   
 
@@ -41,8 +41,9 @@ Apache Ant
 
 KNIME SDK:
 ```
-git clone https://github.com/knime/knime-sdk-setup
+https://github.com/knime/knime-sdk-setup
 ```
+Import the KNIME SDK via Eclipse, the current nodes were generated using the branch `knime-sdk-setup releases/2020-12` and the `KNIME-AP-complete.target` platform run together with the `JavaSE-1.8 (AdoptOpenJDK (OpenJ9) 8 [1.8.0_275])` environment.
 
 Generic Knime Nodes (GKN):
 ```
@@ -55,13 +56,21 @@ Really quick how-to:
 
 ### Use our R framework with the enrich docker:
 on the shell, change to your desired working directory and execute:
+
+on mac/linux:
 ```
-docker run -d -p 8787:8787 -v %cd%:/home/rstudio -e PASSWORD=password enrich:latest
+docker run -d -p 8787:8787 -v $(pwd):/home/rstudio -e PASSWORD=password inesassum/enrich:latest
 ```
-visit `localholst:8787` to enjoy your interactive rstudio session with the `user: rstudio` and `pw: password`!
+or on Windows
+```
+docker run -d -p 8787:8787 -v %cd%:/home/rstudio -e PASSWORD=password inesassum/enrich:latest
+```
+visit `localhost:8787` in your browser to enjoy your interactive rstudio session with the `user: rstudio` and `pw: password`!
+
+Older versions are available on docker.hub (https://hub.docker.com/repository/docker/inesassum/enrich)
 
 ### KNIME
-* start KNIME 3.7 and enjoy our nodes under `Community Nodes/EnrichmentNodes`
+* start KNIME 4.3.4 or later, drop our plugin in your plugin folder and enjoy our nodes under `Community Nodes/EnrichmentNodes`
 
 ### Develop your own nodes
 * write an R script or commandline tool that extends our existing R functions
@@ -82,7 +91,7 @@ Contents
 
 ### src
 
-All files (including Dockerfile) for our enrich docker image. The `files` folder contains all code for the modular R framework.
+All files (including Dockerfile) for our enrich docker image. The `library` folder contains all code for the modular R framework.
 
 
 ### knime
@@ -132,9 +141,10 @@ https://join.slack.com/t/knime-setup/shared_invite/enQtNTMwMzk4NDE0MjQ2LTMwZDhmY
 References:
 -----------
 
-* GSEA (Subramanian, Aravind, et al. "Gene set enrichment analysis: a knowledge-based approach for interpreting genome-wide expression profiles." Proceedings of the National Academy of Sciences 102.43 (2005): 15545-15550.)
-* fgsea (Sergushichev, Alexey. "An algorithm for fast preranked gene set enrichment analysis using cumulative statistic calculation." BioRxiv (2016): 060012.)
-* MONA (Sass, Steffen, et al. "A modular framework for gene set analysis integrating multilevel omics data." Nucleic acids research 41.21 (2013): 9622-9633.)
+* GSEA (Subramanian, Aravind et al. "Gene set enrichment analysis: a knowledge-based approach for interpreting genome-wide expression profiles." Proceedings of the National Academy of Sciences 102.43 (2005): 15545-15550.)
+* fgsea (Korotkevich, Gennady et al. (2021). "Fast gene set enrichment analysis." bioRxiv. doi: 10.1101/060012, https://www.biorxiv.org/content/10.1101/060012v3)
+* MONA (Sass, Steffen et al. "A modular framework for gene set analysis integrating multilevel omics data." Nucleic acids research 41.21 (2013): 9622-9633.)
+* MGSA (Bauer, Sebastian et al. "GOing Bayesian: model-based gene set analysis of genome-scale data." Nucleic acids research vol. 38,11 (2010): 3523-32. doi:10.1093/nar/gkq045)
 * KNIME (Berthold, Michael R., et al. "KNIME-the Konstanz information miner: version 2.0 and beyond." AcM SIGKDD explorations Newsletter 11.1 (2009): 26-31.)
 * GKN (https://github.com/genericworkflownodes/GenericKnimeNodes)
 

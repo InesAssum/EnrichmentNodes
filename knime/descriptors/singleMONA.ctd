@@ -1,0 +1,54 @@
+<?xml version="1.0" ?>
+<tool name="singleMONA" version="1.0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
+    <description>Runs MONA single species model.</description>
+    <manual>MONA - Multilevel ONtology Analysis is a model-based Bayesian method for inferring interpretable pathway term probabilities in a modular C# framework, primarily designed for multi-omics enrichment. This runs the single-omic method of the same model comparable to MGSA.</manual>
+    <executableName>runner.R</executableName>
+    <PARAMETERS version="1.6.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/Param_1_6_2.xsd">
+        <NODE name="singleMONA" description="Runs MONA single-species model.">
+            <ITEM description="Path to the input file. You can supply either an excel table (.xls, .xlsx) or a R object." name="input" type="input-file" required="false" supported_formats="*.RData,*.Rdata,*.RDS,*.xls,*.xlsx" value="/data/example_data/mRNA.xlsx"/>
+            <ITEM description="GMT file used for pathway definition. Select custom to provide your own gmt file. " name="gmt" restrictions="GO:BP,KEGG,Reactome,CPDB,custom" type="string" value="KEGG"/>
+            <ITEM description="Minimal size of a gene set to test. All pathways below the threshold are excluded." name="minSize" restrictions="0:100000" type="int" value="15"/>
+            <ITEM description="Maximal size of a gene set to test. All pathways above the threshold are excluded." name="maxSize" restrictions="1:100000" type="int" value="500"/>
+            <ITEM description="Type of data to run the analysis on. Options are pvalue (numerical, positive, small values are more important), score (numerical, large absolute values are more important) or a column with significance information (binary 0/1, 1 meaning significant)." name="type" restrictions="pvalue,score,significant" type="string" value="pvalue"/>
+            <ITEM description="Cutoff to assess significance." name="cutoff" restrictions="" type="float" value="0.05"/>
+            <ITEM description="Do you want to take direction of effect into account?" name="sign" restrictions="yes,no" type="string" value="no"/>
+            <ITEM description="Custom GS definition" name="mygmt" supported_formats="*.gmt" required="false" type="input-file" value=""/>
+            <ITEM description="Output - connect to output node. Returns .RDS object." name="output1" type="output-file" required="false" supported_formats="*.RDS" value="singleMONA_enrichment_results.RDS"/>
+            <ITEM description="Output - connect to output node. Returns a table with a summary of the enrichment results." name="output2" type="output-file" required="false" supported_formats="*.txt" value="singleMONA_enrichment_summary.txt"/>
+		</NODE>
+	</PARAMETERS>
+	<cli>
+		<clielement optionIdentifier="--method singleMONA"/>
+		<clielement optionIdentifier="--file1">
+			<mapping referenceName="singleMONA.input"/>
+        </clielement>
+        <clielement optionIdentifier="--outres">
+            <mapping referenceName="singleMONA.output1"/>
+        </clielement>
+        <clielement optionIdentifier="--outtable">
+            <mapping referenceName="singleMONA.output2"/>
+        </clielement>
+		<clielement optionIdentifier="--gmt">
+			<mapping referenceName="singleMONA.gmt"/>
+		</clielement>
+		<clielement optionIdentifier="--minSize">
+			<mapping referenceName="singleMONA.minSize"/>
+		</clielement>
+        <clielement optionIdentifier="--maxSize">
+            <mapping referenceName="singleMONA.maxSize"/>
+        </clielement>
+        <clielement optionIdentifier="--type">
+            <mapping referenceName="singleMONA.type"/>
+        </clielement>
+        <clielement optionIdentifier="--cutoff">
+            <mapping referenceName="singleMONA.cutoff"/>
+        </clielement>
+        <clielement optionIdentifier="--sign">
+            <mapping referenceName="singleMONA.sign"/>
+        </clielement>
+		<clielement optionIdentifier="--mygmt">
+			<mapping referenceName="singleMONA.mygmt"/>
+		</clielement>
+
+	</cli>
+</tool>

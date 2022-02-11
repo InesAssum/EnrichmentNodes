@@ -1,41 +1,53 @@
 <?xml version="1.0" ?>
-<tool name="gsea" version="1.0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
-    <description>Runs GSEA using bioconductors fgsea R package.</description>
-    <manual>Runs preranked gene set enrichment analysis. From Bioconductor: The package implements an algorithm for fast gene set enrichment analysis. Using the fast algorithm allows to make more permutations and get more fine grained p-values, which allows to use accurate stantard approaches to multiple hypothesis correction..</manual>
+<tool name="GSEA" version="2.0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
+    <description>Runs GSEA using the R Bioconductor package fgsea.</description>
+    <manual>Runs preranked gene set enrichment analysis. From Bioconductor: The package implements an algorithm for fast gene set enrichment analysis. Using the fast algorithm allows to make more permutations and get more fine grained p-values, which allows to use accurate stantard approaches to multiple hypothesis correction. This node offers basic functionality. To make full use of all available parameters, please use the R package within the Rstudio docker provided with our EnrichmentNodes (inesassum/enrich:latest).</manual>
     <executableName>runner.R</executableName>
     <PARAMETERS version="1.6.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/Param_1_6_2.xsd">
-        <NODE name="gsea" description="Node to run GSEA">
-            <ITEM description="Path to the input file" name="input" type="input-file" required="true" supported_formats="*.RData,*.Rdata,*.RDS" value="/usr/data/example_data/mRNA.RDS"/>
-            <ITEM description="Output - connect to output node. Returns .RDS object." name="output" type="output-file" required="true" supported_formats="*.RDS" value=""/>
-            <ITEM description="GMT file used for pathway definition. Select custom to provide your own gmt file. " name="gmt" restrictions="GO,KEGG,custom" type="string" value="KEGG"/>
-            <ITEM description="Minimal size of a gene set to test. All pathways below the threshold are excluded." name="minSize" restrictions="0:1000" type="int" value="15"/>
-            <ITEM description="Maximal size of a gene set to test. All pathways above the threshold are excluded." name="maxSize" restrictions="1:1000" type="int" value="500"/>
-            <ITEM description="Number of permutations to do. Minimal possible nominal p-value is about 1/nperm." name="nperm" restrictions="100:1000000000" type="int" value="10000"/>
-            <ITEM description="custom GS definition" name="mygmt" supported_formats="*.gmt" required="false" type="input-file" value=""/>
+        <NODE name="GSEA" description="Node to run gene set enrichment analysis (GSEA).">
+            <ITEM description="Path to the input file. You can supply either an excel table (.xls, .xlsx) or a R object." name="input" type="input-file" required="false" supported_formats="*.RData,*.Rdata,*.RDS,*.xls,*.xlsx" value="/data/example_data/mRNA.xlsx"/>
+            <ITEM description="Output - connect to output node. Returns .RDS object." name="output1" type="output-file" required="false" supported_formats="*.RDS" value="GSEA_enrichment_results.RDS"/>
+            <ITEM description="Output - connect to output node. Returns a table with a summary of the enrichment results." name="output2" type="output-file" required="false" supported_formats="*.txt" value="GSEA_enrichment_summary.txt"/>
+            <ITEM description="GMT file used for pathway definition. Select custom to provide your own gmt file." name="gmt" restrictions="GO:BP,KEGG,Reactome,custom" type="string" value="KEGG"/>
+            <ITEM description="Minimal size of a gene set to test. All pathways below the threshold are excluded." name="minSize" restrictions="0:100000" type="int" value="15"/>
+            <ITEM description="Maximal size of a gene set to test. All pathways above the threshold are excluded." name="maxSize" restrictions="1:100000" type="int" value="500"/>
+            <ITEM description="Type of data to run the analysis on. Options are pvalue (numerical, positive, small values are more important), score (numerical, large absolute values are more important) or a column with significance information (binary 0/1, 1 meaning significant)." name="type" restrictions="pvalue,score,significant" type="string" value="score"/>
+            <ITEM description="Do you want to take direction of effect into account?" name="sign" restrictions="yes,no" type="string" value="yes"/>
+            <ITEM description="Deprecated: Optional parameter to control the number of permutations. Minimal possible nominal p-value is about 1/nperm." name="nperm" restrictions="0:1000000000" type="int" value="0"/>
+            <ITEM description="Custom GS definition" name="mygmt" supported_formats="*.gmt" required="false" type="input-file" value=""/>
         </NODE>
     </PARAMETERS>
     <cli>
-		<clielement optionIdentifier="--method gsea"/>
-        <clielement optionIdentifier="--file">
-            <mapping referenceName="gsea.input"/>
+		<clielement optionIdentifier="--method GSEA"/>
+        <clielement optionIdentifier="--file1">
+            <mapping referenceName="GSEA.input"/>
         </clielement>
-        <clielement optionIdentifier="--out">
-            <mapping referenceName="gsea.output"/>
+        <clielement optionIdentifier="--outres">
+            <mapping referenceName="GSEA.output1"/>
+        </clielement>
+        <clielement optionIdentifier="--outtable">
+            <mapping referenceName="GSEA.output2"/>
         </clielement>
         <clielement optionIdentifier="--gmt">
-            <mapping referenceName="gsea.gmt"/>
+            <mapping referenceName="GSEA.gmt"/>
         </clielement>
         <clielement optionIdentifier="--minSize">
-            <mapping referenceName="gsea.minSize"/>
+            <mapping referenceName="GSEA.minSize"/>
         </clielement>
         <clielement optionIdentifier="--maxSize">
-            <mapping referenceName="gsea.maxSize"/>
+            <mapping referenceName="GSEA.maxSize"/>
+        </clielement>
+        <clielement optionIdentifier="--type">
+            <mapping referenceName="GSEA.type"/>
+        </clielement>
+        <clielement optionIdentifier="--sign">
+            <mapping referenceName="GSEA.sign"/>
         </clielement>
         <clielement optionIdentifier="--nperm">
-            <mapping referenceName="gsea.nperm"/>
+            <mapping referenceName="GSEA.nperm"/>
         </clielement>
         <clielement optionIdentifier="--mygmt">
-            <mapping referenceName="gsea.mygmt"/>
+            <mapping referenceName="GSEA.mygmt"/>
         </clielement>
     </cli>
 </tool>

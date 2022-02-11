@@ -1,6 +1,1295 @@
 #!/usr/bin/env Rscript
 args = commandArgs(trailingOnly=TRUE)
 
+################################################################################
+# Convenience functions  #######################################################
+################################################################################
+
+## Convert adjacency matrix to list of gene sets -------------------------------
+#' Convert adjacency matrix to list of gene sets
+#'
+#' @param pws matrix with gene set annotations, genes as rows and terms as columns
+#'
+#' @return pws.l list of named lists (term names) of gene names
+#' 
+#' @author Ines Assum
+
+matrix_to_list <- function(pws){
+  pws.l <- list()
+  for (pw in colnames(pws)) {
+    pws.l[[pw]] <- rownames(pws)[as.logical(pws[, pw])]
+  }
+  return(pws.l)
+}
+
+## Extend adjacency matrix to up- and down-regulated annotation matrix ---------
+#' Extend adjacency matrix to up- and down-regulated annotation matrix
+#'
+#' @param Adj Annotation matrix with gene set annotations, genes as rows and terms as columns
+#'
+#' @return Adj.pm list of named lists (term names) of gene names
+#' 
+#' @author Ines Assum
+pw_with_dir <- function(Adj){
+  A <- Adj
+  rownames(A) <- paste0(rownames(Adj), "_up")
+  colnames(A) <- paste0(colnames(Adj), "_up")
+  
+  NAA <- matrix(0, dim(Adj)[1], dim(Adj)[2])
+  rownames(NAA) <- paste0(rownames(Adj), "_up")
+  colnames(NAA) <- paste0(colnames(Adj), "_down")
+  
+  NAB <- matrix(0, dim(Adj)[1], dim(Adj)[2])
+  rownames(NAB) <- paste0(rownames(Adj), "_down")
+  colnames(NAB) <- paste0(colnames(Adj), "_up")
+  
+  B <- Adj
+  rownames(B) <- paste0(rownames(Adj), "_down")
+  colnames(B) <- paste0(colnames(Adj), "_down")
+  
+  Adj.pm <- rbind(cbind(A, NAA), cbind(NAB, B))
+  
+  return(Adj.pm)
+}
+
+## Convert a named gene set list to a .gmt file --------------------------------
+#' Convert a named gene set list to a .gmt file
+#'
+#' @param pwlist Annotation matrix with gene set annotations, genes as rows and terms as columns
+#' @param gmt.file Annotation matrix with gene set annotations, genes as rows and terms as columns
+#' @param description information about the annotation source. Single string or of length(pwlist)
+#'
+#' @return Adj.pm list of named lists (term names) of gene names
+#' 
+#' @author Ines Assum
+write_gmt <- function(pwlist, gmt.file, description=NULL){
+  if (file.exists(gmt.file)){
+    file.remove(gmt.file)
+  }
+  if(is.null(description)){
+    description <- "Custom annotations exported from R"
+  }
+  if(length(description)==1){
+    description <- rep(description, length(pwlist))
+  }
+  gsname = names(pwlist)
+  for (i in seq_along(pwlist)) {
+    cat(gsname[i], description[i], gmtlist[[i]],
+        file = gmt.file,
+        append = TRUE, sep = "\t")
+    cat("\n", append = TRUE, file = gmt.file)
+  }
+  print(paste0("Saving as ", gmt.file))
+}
+
+################################################################################
+# Enrichment functions for different methods####################################
+################################################################################
+
+## Run GSEA analysis -----------------------------------------------------------
+#' Run GSEA analysis
+#' 
+#' @param dataPath string // file path to .RDS input file: named numerical vector, names=gene symbols or xlsx table
+#' @param gmtPath string // Dir containing Gene set definition to be used (KEGG/GO/custom)
+#' @param minSize integer // min size of GSs to be considered, default: 15
+#' @param maxSize integer // max size of GSs to be considered, default: 500
+#' @param type string // type of result information, e.g. pvalue or score
+#' @param cutoff numeric // cutoff value for significance
+#' @param sign string // taking sign into account yes or no
+#' @param nperm integer // Deprecated: number of iterations default: NULL
+#' 
+#' @author Ines Assum
+run_gsea <- function(dataPath, gmtPath,
+                     minSize=15, maxSize=500,
+                     type="pvalue", cutoff=0.05, sign="no",
+                     nperm=0,
+                     debug=FALSE) {
+  require(fgsea)
+  
+  data.path <- dataPath
+  gmt.path <- gmtPath
+  if (grepl(".RDS|.rds|.Rds", dataPath)){
+    print("Detected .RDS file...Read in file:")
+    print(dataPath)
+    data <- readRDS(dataPath)
+    print("...done.")
+  } else if (grepl(".xlsx", dataPath)){
+    require(readxl)
+    print("Detected .xlsx file...Read in file:")
+    print(dataPath)
+    data <- data.frame(read_xlsx(dataPath))
+    print("...done.")
+  } else if (grepl(".xls", dataPath)){
+    require(readxl)
+    print("Detected .xls file...Read in file:")
+    print(dataPath)
+    data <- data.frame(read_xls(dataPath))
+    print("...done.")
+  }
+  
+  check.columns <- F
+  if ("id" %in% colnames(data)){
+    rownames(data) <- data$id
+    cols <- "id"
+    if(type %in% colnames(data)){
+      cols <- c(cols, type)
+      if(type == "score" & sign == "yes"){
+        check.columns <- T
+        if("sign" %in% colnames(data)){ cols <- c(cols, "sign") }
+      }else if("sign" %in% colnames(data) & sign=="yes"){
+        cols <- c(cols, "sign")
+      }
+      check.columns <- T
+    }
+  }
+  if(check.columns){
+    print("Found needed information in data file. Let's proceed with running the analysis on")
+    print(paste0("Used columns: ", paste(cols, collapse = ", ")))
+  } else {
+    stop(paste0("Wrong setup of input data file.",
+                "Did not find columns id and ", type, "."))
+  }
+  data <- data[complete.cases(data[, cols]), cols]
+  
+  gmt <- gmtPathways(gmtPath)
+  
+  if(type=="pvalue"){
+    rank <- data$pvalue
+    names(rank) <- rownames(data)
+    if(sign=="yes"){
+      rank <- (-log10(data$pvalue))*sign(data$sign)
+      names(rank) <- rownames(data)
+    }
+  } else if (type=="score"){
+    if(sign=="yes"){
+      if("sign" %in% cols){
+        rank <- abs(data$score)*sign(data$sign)
+        names(rank) <- rownames(data)
+      }else{
+        rank <- data$score
+        names(rank) <- rownames(data)
+      }
+    }else{
+      rank <- abs(data$score)
+      names(rank) <- rownames(data)
+    }
+  }
+  
+  res <- NULL
+  if(sign=="yes"){
+    if(nperm==0){
+      res <- fgsea(scoreType = "std",
+                   pathways = gmt,
+                   stats = rank,
+                   minSize=minSize,
+                   maxSize=maxSize,
+                   eps = 0)
+    }else{
+      res <- fgsea(scoreType = "std",
+                   pathways = gmt,
+                   stats = rank,
+                   minSize=minSize,
+                   maxSize=maxSize,
+                   nperm = nperm)
+    }
+  }else if(sign=="no" & type=="pvalue"){
+    if(nperm==0){
+      res <- fgsea(scoreType = "neg",
+                   pathways = gmt,
+                   stats = rank,
+                   minSize=minSize,
+                   maxSize=maxSize,
+                   eps = 0)
+    }else{
+      res <- fgsea(scoreType = "neg",
+                   pathways = gmt,
+                   stats = rank,
+                   minSize=minSize,
+                   maxSize=maxSize,
+                   nperm = nperm)
+    }
+  }else if(sign=="no" & type=="score"){
+    if(nperm==0){
+      res <- fgsea(scoreType = "pos",
+                   pathways = gmt,
+                   stats = rank,
+                   minSize=minSize,
+                   maxSize=maxSize,
+                   eps = 0)
+    }else{
+      res <- fgsea(scoreType = "pos",
+                   pathways = gmt,
+                   stats = rank,
+                   minSize=minSize,
+                   maxSize=maxSize,
+                   nperm = nperm)
+    }
+  }
+  summary <- res
+  summary$leadingEdge <- NULL
+  summary <- summary[order(summary$pval), ]
+  print.data.frame(summary[1:10, ], row.names=F)
+  GSEAres <- list("summary" = summary,
+                  "res" = res,
+                  "method" = "GSEA",
+                  "opts" = list("data" = data.path,
+                                "geneSets" = gmt.path,
+                                "minSize" = minSize,
+                                "maxSize" = maxSize,
+                                "type" = type,
+                                "cutoff" = cutoff,
+                                "sign" = sign,
+                                "nperm" = nperm))
+  return(GSEAres)
+}
+
+
+## Run MGSA analysis -----------------------------------------------------------
+#' Run MGSA analysis
+#' 
+#' @param dataPath string // file path to .RDS input file: named numerical vector, names=gene symbols or xlsx table
+#' @param gmtPath string // Dir containing Gene set definition to be used (KEGG/GO/custom)
+#' @param minSize integer // min size of GSs to be considered, default: 15
+#' @param maxSize integer // max size of GSs to be considered, default: 500
+#' @param type string // type of result information, e.g. pvalue, score or significant
+#' @param cutoff numeric // cutoff value for significance
+#' @param sign string // taking sign into account yes or no
+#' @param debug logical // more verbose options default: F
+#' 
+#' @author Ines Assum
+run_mgsa <- function(dataPath, gmtPath,
+                     minSize=15, maxSize=500,
+                     type="pvalue", cutoff=0.05, sign="no",
+                     debug=FALSE) {
+  require(fgsea)
+  require(mgsa)
+  
+  data.path <- dataPath
+  gmt.path <- gmtPath
+  if (grepl(".RDS|.rds|.Rds", dataPath)){
+    print("Detected .RDS file...Read in file:")
+    print(dataPath)
+    data <- readRDS(dataPath)
+    print("...done.")
+  } else if (grepl(".xlsx", dataPath)){
+    require(readxl)
+    print("Detected .xlsx file...Read in file:")
+    print(dataPath)
+    data <- data.frame(read_xlsx(dataPath))
+    print("...done.")
+  } else if (grepl(".xls", dataPath)){
+    require(readxl)
+    print("Detected .xls file...Read in file:")
+    print(dataPath)
+    data <- data.frame(read_xls(dataPath))
+    print("...done.")
+  }
+  
+  check.columns <- F
+  if ("id" %in% colnames(data)){
+    rownames(data) <- data$id
+    cols <- "id"
+    if(type %in% colnames(data)){
+      cols <- c(cols, type)
+      if(type == "score" & sign == "yes"){
+        check.columns <- T
+        if("sign" %in% colnames(data)){ cols <- c(cols, "sign") }
+      }else if("sign" %in% colnames(data) & sign=="yes"){
+        cols <- c(cols, "sign")
+      }
+      check.columns <- T
+    }
+  }
+  if(check.columns){
+    print("Found needed information in data file. Let's proceed with running the analysis on")
+    print(paste0("Used columns: ", paste(cols, collapse = ", ")))
+  } else {
+    stop(paste0("Wrong setup of input data file.",
+                "Did not find columns id and ", type, "."))
+  }
+  data <- data[complete.cases(data[, cols]), cols]
+  
+  gmt <- gmtPathways(gmtPath)
+  hidden <- unique(unlist(gmt))
+  Adj <- matrix(NA, dimnames = list(hidden, names(gmt)),
+                nrow = length(hidden), ncol = length(gmt))
+  for (i in 1:dim(Adj)[2]){
+    Adj[,i] <- as.numeric(hidden %in% gmt[[i]])
+  }
+  hidden <- intersect(rownames(data), hidden)
+  Adj <- Adj[hidden, colnames(Adj)[which(colSums(Adj[hidden,])>minSize &
+                                           colSums(Adj[hidden,])<maxSize)]]
+  pwl <- matrix_to_list(Adj)
+  if(sign == "yes"){
+    pwl <- matrix_to_list(pw_with_dir(Adj))
+  }
+  terms <- colnames(Adj)
+  
+  if(type=="pvalue"){
+    obs <- data$id[data$pvalue<cutoff]
+    if(sign=="yes"){
+      obs <- paste0(data$id[data$pvalue<cutoff],
+                    ifelse(data$sign[data$pvalue<cutoff]>0,
+                           "_up", "_down"))
+    }
+  } else if (type=="score"){
+    obs <- data$id[abs(data$score)>cutoff]
+    if(sign=="yes"){
+      if("sign" %in% cols){
+        obs <- paste0(data$id[abs(data$score)>cutoff],
+                      ifelse(data$sign[abs(data$score)>cutoff]>0,
+                             "_up", "_down"))
+      }else{
+        obs <- paste0(data$id[abs(data$score)>cutoff],
+                      ifelse(data$score[abs(data$score)>cutoff]>0,
+                             "_up", "_down"))
+      }
+    }
+  }
+  
+  res <- NULL
+  tries <- 0
+  while(is.null(res) & tries < 10){
+    tries <- tries + 1
+    try({res <- mgsa(obs, pwl)})
+  }
+  summary <- data.frame(pathway=rownames(res@setsResults), res@setsResults,
+                        row.names = rownames(res@setsResults),
+                        stringsAsFactors = F)
+  colnames(summary) <- c("pathway", "inPopulation", "inStudySet", "posterior", "std.error")
+  summary <- summary[order(summary$posterior, decreasing = T), ]
+  print.data.frame(summary[1:10, ], row.names=F)
+  MGSAres <- list("summary" = summary,
+                  "res" = res,
+                  "method" = "MGSA",
+                  "opts" = list("data" = data.path,
+                                "geneSets" = gmt.path,
+                                "minSize" = minSize,
+                                "maxSize" = maxSize,
+                                "type" = type,
+                                "cutoff" = cutoff,
+                                "sign" = sign))
+  return(MGSAres)
+}
+
+## Run single MONA analysis ----------------------------------------------------
+#' Run single MONA analysis
+#' 
+#' @param dataPath string // file path to .RDS input file: named numerical vector, names=gene symbols or xlsx table
+#' @param gmtPath string // Dir containing Gene set definition to be used (KEGG/GO/custom)
+#' @param minSize integer // min size of GSs to be considered, default: 15
+#' @param maxSize integer // max size of GSs to be considered, default: 500
+#' @param type string // type of result information, e.g. pvalue, score or significant
+#' @param cutoff numeric // cutoff value for significance
+#' @param sign string // taking sign into account yes or no
+#' @param p.mono string // path to mono installation, default: mono
+#' @param p.mona string // path to MONAconsole App, default: /usr/bin/MonaConsoleApp.exe
+#' 
+#' @author Ines Assum
+run_single_mona <- function(dataPath, gmtPath,
+                            minSize=15, maxSize=500,
+                            type="pvalue", cutoff=0.05, sign="no",
+                            debug=FALSE,
+                            p.mono="mono", p.mona="/usr/bin/MonaConsoleApp.exe") {
+  require(fgsea)
+  
+  data.path <- dataPath
+  gmt.path <- gmtPath
+  
+  if (grepl(".RDS|.rds|.Rds", dataPath)){
+    print("Detected .RDS file...Read in file:")
+    print(dataPath)
+    data <- readRDS(dataPath)
+    print("...done.")
+  } else if (grepl(".xlsx", dataPath)){
+    require(readxl)
+    print("Detected .xlsx file...Read in file:")
+    print(dataPath)
+    data <- data.frame(read_xlsx(dataPath))
+    print("...done.")
+  } else if (grepl(".xls", dataPath)){
+    require(readxl)
+    print("Detected .xls file...Read in file:")
+    print(dataPath)
+    data <- data.frame(read_xls(dataPath))
+    print("...done.")
+  }else{
+    stop(paste0("Problems with your input file.",
+                " File type not recognized."))
+  }
+  
+  check.columns <- F
+  if ("id" %in% colnames(data)){
+    rownames(data) <- data$id
+    cols <- "id"
+    if(type %in% colnames(data)){
+      cols <- c(cols, type)
+      if(type == "score" & sign == "yes"){
+        check.columns <- T
+        if("sign" %in% colnames(data)){ cols <- c(cols, "sign") }
+      }else if("sign" %in% colnames(data) & sign=="yes"){
+        cols <- c(cols, "sign")
+      }
+      check.columns <- T
+    }
+  }
+  if(check.columns){
+    print("Found needed information in data file. Let's proceed with running the analysis on")
+    print(paste0("Used columns: ", paste(cols, collapse = ", ")))
+  } else {
+    stop(paste0("Wrong setup of input data file.",
+                "Did not find columns id and ", type, "."))
+  }
+  data <- data[complete.cases(data[, cols]), cols]
+  
+  path <- tempdir()
+  gmt <- gmtPathways(gmtPath)
+  hidden <- unique(unlist(gmt))
+  Adj <- matrix(NA, dimnames = list(hidden, names(gmt)),
+                nrow = length(hidden), ncol = length(gmt))
+  for (i in 1:dim(Adj)[2]){
+    Adj[,i] <- as.numeric(hidden %in% gmt[[i]])
+  }
+  hidden <- intersect(rownames(data), hidden)
+  Adj <- Adj[hidden, colnames(Adj)[which(colSums(Adj[hidden,])>minSize &
+                                           colSums(Adj[hidden,])<maxSize)]]
+  if(sign=="yes"){
+    hidden1 <- hidden
+    Adj <- pw_with_dir(Adj)
+  }
+  hidden <- rownames(Adj)
+  terms <- colnames(Adj)
+  assign <- apply(Adj, 1, function(x) paste(which(x>0)-1, collapse=","))
+  p.assign <- paste0(path, "assignmentMatrix.txt")
+  write(assign, file=p.assign)
+  p.terms <- paste0(path, "terms.txt")
+  write.table(terms, file=p.terms, col.names=F, row.names = F, quote=F)
+  if(type=="pvalue"){
+    obs <- as.numeric(data[hidden, "pvalue"] < cutoff)
+    if(sign=="yes"){
+      obs <- c(as.numeric(data[hidden1, "pvalue"] < cutoff &
+                            data[hidden1, "sign"] > 0),
+               as.numeric(data[hidden1, "pvalue"] < cutoff &
+                            data[hidden1, "sign"] < 0))
+    }
+  } else if (type=="score"){
+    obs <- as.numeric(abs(data[hidden, "score"]) > cutoff)
+    if(sign=="yes"){
+      if("sign" %in% cols){
+        obs <- c(as.numeric(abs(data[hidden1, "score"]) > cutoff &
+                              data[hidden1, "sign"] > 0),
+                 as.numeric(abs(data[hidden1, "score"]) > cutoff &
+                              data[hidden1, "sign"] < 0))
+      }else{
+        obs <- c(as.numeric(abs(data[hidden1, "score"]) > cutoff &
+                              data[hidden1, "score"] > 0),
+                 as.numeric(abs(data[hidden1, "score"]) > cutoff &
+                              data[hidden1, "score"] < 0))
+      }
+    }
+  }
+  p.obs <- paste0(path, "obs.txt")
+  write.table(obs, file=p.obs,
+              col.names=F, row.names = F, quote=F)
+  p.out <- paste0(path, "output.txt")
+  
+  tries <- 0
+  while (!file.exists(p.out) & tries < 11){
+    tries <- tries + 1
+    sys1D <- system(paste(p.mono, p.mona, "0",
+                          p.assign, p.obs, p.terms, p.out, "1",
+                          sep = " "), intern = T)
+  }
+  summary <- read.table(file=p.out, sep="\t", h=F)
+  colnames(summary) <- c("pathway", "posterior")
+  summary <- summary[order(summary$posterior, decreasing = T), ]
+  print.data.frame(summary[1:10, ], row.names=F)
+  singleMONAres <- list("summary" = summary,
+                        "res" = summary,
+                        "method" = "Single MONA",
+                        "opts" = list("data" = data.path,
+                                      "geneSets" = gmt.path,
+                                      "minSize" = minSize,
+                                      "maxSize" = maxSize,
+                                      "type" = type,
+                                      "cutoff" = cutoff,
+                                      "sign" = sign))
+  
+  unlink(path)
+  return(singleMONAres)
+}
+
+## Run multi-omics MONA analysis (two species cooperative model) ---------------
+#' Run multi-omics MONA analysis (two species cooperative model)
+#' 
+#' @param data1Path string // file path to first species .RDS input file: named numerical vector, names=gene symbols or xlsx table
+#' @param data2Path string // file path to second species .RDS input file: named numerical vector, names=gene symbols or xlsx table
+#' @param gmtPath string // Dir containing Gene set definition to be used (KEGG/GO/custom)
+#' @param minSize integer // min size of GSs to be considered, default: 15
+#' @param maxSize integer // max size of GSs to be considered, default: 500
+#' @param type string // type of result information, e.g. pvalue, score or significant
+#' @param cut numeric // cutoff value for significance
+#' @param sign string // taking sign into account yes or no
+#' @param p.mono string // path to mono installation, default: mono
+#' @param p.mona string // path to MONAconsole App, default: /usr/bin/MonaConsoleApp.exe
+#' 
+#' @author Ines Assum
+run_mona2Dcoop <- function(data1Path, data2Path, gmtPath,
+                           minSize=15, maxSize=500,
+                           type="pvalue", cutoff=0.05, sign="no",
+                           debug=FALSE,
+                           p.mono="mono", p.mona="/usr/bin/MonaConsoleApp.exe") {
+  require(fgsea)
+  data.path <- c(data1Path, data2Path)
+  gmt.path <- gmtPath
+  
+  print("Reading data for the first species...")
+  if (grepl(".RDS|.rds|.Rds", data1Path)){
+    print("Detected .RDS file...Read in file:")
+    print(data1Path)
+    data1 <- readRDS(data1Path)
+    print("...done.")
+  } else if (grepl(".xlsx", data1Path)){
+    require(readxl)
+    print("Detected .xlsx file...Read in file:")
+    print(data1Path)
+    data1 <- data.frame(read_xlsx(data1Path))
+    print("...done.")
+  } else if (grepl(".xls", data1Path)){
+    require(readxl)
+    print("Detected .xls file...Read in file:")
+    print(data1Path)
+    data1 <- data.frame(read_xls(data1Path))
+    print("...done.")
+  }
+  check.columns <- F
+  if ("id" %in% colnames(data1)){
+    rownames(data1) <- data1$id
+    cols1 <- "id"
+    if(type %in% colnames(data1)){
+      cols1 <- c(cols1, type)
+      if(type == "score" & sign == "yes"){
+        check.columns <- T
+        if("sign" %in% colnames(data1)){ cols1 <- c(cols1, "sign") }
+      }else if("sign" %in% colnames(data1) & sign=="yes"){
+        cols1 <- c(cols1, "sign")
+      }
+      check.columns <- T
+    }
+  }
+  if(check.columns){
+    print("Found needed information in the first species data file. Let's proceed with running the analysis on")
+    print(paste0("Used columns: ", paste(cols1, collapse = ", ")))
+  } else {
+    stop(paste0("Wrong setup of first species input data file.",
+                "Did not find columns id and ", type, "."))
+  }
+  data1 <- data1[complete.cases(data1[, cols1]), cols1]
+  
+  print("Reading data for the second species...")
+  if (grepl(".RDS|.rds|.Rds", data2Path)){
+    print("Detected .RDS file...Read in file:")
+    print(data2Path)
+    data2 <- readRDS(data2Path)
+    print("...done.")
+  } else if (grepl(".xlsx", data2Path)){
+    require(readxl)
+    print("Detected .xlsx file...Read in file:")
+    print(data2Path)
+    data2 <- data.frame(read_xlsx(data2Path))
+    print("...done.")
+  } else if (grepl(".xls", data2Path)){
+    require(readxl)
+    print("Detected .xls file...Read in file:")
+    print(data2Path)
+    data2 <- data.frame(read_xls(data2Path))
+    print("...done.")
+  }
+  check.columns <- F
+  if ("id" %in% colnames(data2)){
+    rownames(data2) <- data2$id
+    cols2 <- "id"
+    if(type %in% colnames(data2)){
+      cols2 <- c(cols2, type)
+      if(type == "score" & sign == "yes"){
+        check.columns <- T
+        if("sign" %in% colnames(data2)){ cols2 <- c(cols2, "sign") }
+      }else if("sign" %in% colnames(data2) & sign=="yes"){
+        cols2 <- c(cols2, "sign")
+      }
+      check.columns <- T
+    }
+  }
+  if(check.columns){
+    print("Found needed information in the second species data file. Let's proceed with running the analysis on")
+    print(paste0("Used columns: ", paste(cols2, collapse = ", ")))
+  } else {
+    stop(paste0("Wrong setup of second species input data file.",
+                "Did not find columns id and ", type, "."))
+  }
+  data2 <- data2[complete.cases(data2[, cols2]), cols2]
+  
+  path <- tempdir()
+  gmt <- gmtPathways(gmtPath)
+  hidden <- unique(unlist(gmt))
+  Adj <- matrix(NA, dimnames = list(hidden, names(gmt)),
+                nrow = length(hidden), ncol = length(gmt))
+  for (i in 1:dim(Adj)[2]){
+    Adj[,i] <- as.numeric(hidden %in% gmt[[i]])
+  }
+  hidden <- intersect(rownames(data1), hidden)
+  Adj <- Adj[hidden, colnames(Adj)[which(colSums(Adj[hidden,])>minSize &
+                                           colSums(Adj[hidden,])<maxSize)]]
+  if(sign=="yes"){
+    hidden1 <- hidden
+    Adj <- pw_with_dir(Adj)
+  }
+  hidden <- rownames(Adj)
+  terms <- colnames(Adj)
+  assign <- apply(Adj, 1, function(x) paste(which(x>0)-1, collapse=","))
+  p.assign <- paste0(path, "assignmentMatrix.txt")
+  write(assign, file=p.assign)
+  p.terms <- paste0(path, "terms.txt")
+  write.table(terms, file=p.terms, col.names=F, row.names = F, quote=F)
+  
+  if(type=="pvalue"){
+    obs1 <- as.numeric(data1[hidden, "pvalue"] < cutoff)
+    obs2 <- as.numeric(data2[hidden, "pvalue"] < cutoff)
+    if(sign=="yes"){
+      obs1 <- c(as.numeric(data1[hidden1, "pvalue"] < cutoff &
+                             data1[hidden1, "sign"] > 0),
+                as.numeric(data1[hidden1, "pvalue"] < cutoff &
+                             data1[hidden1, "sign"] < 0))
+      obs2 <- c(as.numeric(data2[hidden1, "pvalue"] < cutoff &
+                             data2[hidden1, "sign"] > 0),
+                as.numeric(data2[hidden1, "pvalue"] < cutoff &
+                             data2[hidden1, "sign"] < 0))
+    }
+  } else if (type=="score"){
+    obs1 <- as.numeric(abs(data1[hidden, "score"]) > cutoff)
+    obs2 <- as.numeric(abs(data2[hidden, "score"]) > cutoff)
+    if(sign=="yes"){
+      if("sign" %in% cols1){
+        obs1 <- c(as.numeric(abs(data1[hidden1, "score"]) > cutoff &
+                               data1[hidden1, "sign"] > 0),
+                  as.numeric(abs(data1[hidden1, "score"]) > cutoff &
+                               data1[hidden1, "sign"] < 0))
+      }else{
+        obs1 <- c(as.numeric(abs(data1[hidden1, "score"]) > cutoff &
+                               data1[hidden1, "score"] > 0),
+                  as.numeric(abs(data1[hidden1, "score"]) > cutoff &
+                               data1[hidden1, "score"] < 0))
+      }
+      if("sign" %in% cols2){
+        obs2 <- c(as.numeric(abs(data2[hidden1, "score"]) > cutoff &
+                               data2[hidden1, "sign"] > 0),
+                  as.numeric(abs(data2[hidden1, "score"]) > cutoff &
+                               data2[hidden1, "sign"] < 0))
+      }else{
+        obs2 <- c(as.numeric(abs(data2[hidden1, "score"]) > cutoff &
+                               data2[hidden1, "score"] > 0),
+                  as.numeric(abs(data2[hidden1, "score"]) > cutoff &
+                               data2[hidden1, "score"] < 0))
+      }
+    }
+  }
+  obs2[is.na(obs2)] <- 0
+  miss <- c(as.numeric(!(hidden %in% data2$id)))
+  p.miss <- paste0(path, "missing.txt")
+  write.table(miss, file=p.miss,
+              col.names=F, row.names = F, quote=F)
+  
+  p.obs1 <- paste0(path, "obs1.txt")
+  write.table(obs1, file=p.obs1,
+              col.names=F, row.names = F, quote=F)
+  p.obs2 <- paste0(path, "obs2.txt")
+  write.table(obs2, file=p.obs2,
+              col.names=F, row.names = F, quote=F)
+  p.out <- paste0(path, "output_two_species.txt")
+  
+  tries <- 0
+  while (!file.exists(p.out) & tries < 11){
+    tries <- tries + 1
+    sys2D <- system(paste(p.mono, p.mona, "7",
+                          p.assign, p.obs1, p.terms, p.out,
+                          "1", p.obs2, p.miss,
+                          sep = " "), intern = T)
+  }
+  summary <- read.table(file=p.out, sep="\t", h=F)
+  colnames(summary) <- c("pathway", "posterior")
+  summary <- summary[order(summary$posterior, decreasing = T), ]
+  print.data.frame(summary[1:10, ], row.names=F)
+  unlink(path)
+  
+  twoMONAres <- list("summary" = summary,
+                     "res" = summary,
+                     "method" = "MONA two-species cooperative model",
+                     "opts" = list("data" = data.path,
+                                   "gmt" = gmt.path,
+                                   "minSize" = minSize,
+                                   "maxSize" = maxSize,
+                                   "type" = type,
+                                   "cutoff" = cutoff,
+                                   "sign" = sign))
+  return(twoMONAres)
+  
+  # if(.Platform$OS.type =="windows"){
+  #   tries <- 0
+  #   while (!file.exists(p.out) && tries<3){
+  #     sys1 <- system(paste( p.mona, "0",
+  #                           p.assign, p.yn, p.terms, p.out, "1",
+  #                           sep = " "), intern = T)
+  #     tries <- tries+1
+  #   }
+  # } else {
+  #   tries <- 0
+  #   while (!file.exists(p.out) && tries<3){
+  #     sys1 <- system(paste( p.mono, p.mona, "0",
+  #                           p.assign, p.yn, p.terms, p.out, "1",
+  #                           sep = " "), intern = T)
+  #     tries <- tries+1
+  #   }
+  # }
+}
+
+## Run multi-omics MONA analysis (two species cooperative model with two missings) -----
+#' Run multi-omics MONA analysis (two species cooperative model with two missings)
+#' 
+#' @param data1Path string // file path to first species .RDS input file: named numerical vector, names=gene symbols or xlsx table
+#' @param data2Path string // file path to second species .RDS input file: named numerical vector, names=gene symbols or xlsx table
+#' @param gmtPath string // Dir containing Gene set definition to be used (KEGG/GO/custom)
+#' @param minSize integer // min size of GSs to be considered, default: 15
+#' @param maxSize integer // max size of GSs to be considered, default: 500
+#' @param type string // type of result information, e.g. pvalue, score or significant
+#' @param cut numeric // cutoff value for significance
+#' @param sign string // taking sign into account yes or no
+#' @param p.mono string // path to mono installation, default: mono
+#' @param p.mona string // path to MONAconsole App, default: /usr/bin/MonaConsoleApp.exe
+#' 
+#' @author Ines Assum
+run_mona2Dcoop2 <- function(data1Path, data2Path, gmtPath,
+                            minSize=15, maxSize=500,
+                            type="pvalue", cutoff=0.05, sign="no",
+                            debug=FALSE,
+                            p.mono="mono", p.mona="/usr/bin/MonaConsoleApp2.exe") {
+  require(fgsea)
+  data.path <- c(data1Path, data2Path)
+  gmt.path <- gmtPath
+  
+  print("Reading data for the first species...")
+  if (grepl(".RDS|.rds|.Rds", data1Path)){
+    print("Detected .RDS file...Read in file:")
+    print(data1Path)
+    data1 <- readRDS(data1Path)
+    print("...done.")
+  } else if (grepl(".xlsx", data1Path)){
+    require(readxl)
+    print("Detected .xlsx file...Read in file:")
+    print(data1Path)
+    data1 <- data.frame(read_xlsx(data1Path))
+    print("...done.")
+  } else if (grepl(".xls", data1Path)){
+    require(readxl)
+    print("Detected .xls file...Read in file:")
+    print(data1Path)
+    data1 <- data.frame(read_xls(data1Path))
+    print("...done.")
+  }
+  check.columns <- F
+  if ("id" %in% colnames(data1)){
+    rownames(data1) <- data1$id
+    cols1 <- "id"
+    if(type %in% colnames(data1)){
+      cols1 <- c(cols1, type)
+      if(type == "score" & sign == "yes"){
+        check.columns <- T
+        if("sign" %in% colnames(data1)){ cols1 <- c(cols1, "sign") }
+      }else if("sign" %in% colnames(data1) & sign=="yes"){
+        cols1 <- c(cols1, "sign")
+      }
+      check.columns <- T
+    }
+  }
+  if(check.columns){
+    print("Found needed information in the first species data file. Let's proceed with running the analysis on")
+    print(paste0("Used columns: ", paste(cols1, collapse = ", ")))
+  } else {
+    stop(paste0("Wrong setup of first species input data file.",
+                "Did not find columns id and ", type, "."))
+  }
+  data1 <- data1[complete.cases(data1[, cols1]), cols1]
+  
+  print("Reading data for the second species...")
+  if (grepl(".RDS|.rds|.Rds", data2Path)){
+    print("Detected .RDS file...Read in file:")
+    print(data2Path)
+    data2 <- readRDS(data2Path)
+    print("...done.")
+  } else if (grepl(".xlsx", data2Path)){
+    require(readxl)
+    print("Detected .xlsx file...Read in file:")
+    print(data2Path)
+    data2 <- data.frame(read_xlsx(data2Path))
+    print("...done.")
+  } else if (grepl(".xls", data2Path)){
+    require(readxl)
+    print("Detected .xls file...Read in file:")
+    print(data2Path)
+    data2 <- data.frame(read_xls(data2Path))
+    print("...done.")
+  }
+  check.columns <- F
+  if ("id" %in% colnames(data2)){
+    rownames(data2) <- data2$id
+    cols2 <- "id"
+    if(type %in% colnames(data2)){
+      cols2 <- c(cols2, type)
+      if(type == "score" & sign == "yes"){
+        check.columns <- T
+        if("sign" %in% colnames(data2)){ cols2 <- c(cols2, "sign") }
+      }else if("sign" %in% colnames(data2) & sign=="yes"){
+        cols2 <- c(cols2, "sign")
+      }
+      check.columns <- T
+    }
+  }
+  if(check.columns){
+    print("Found needed information in the second species data file. Let's proceed with running the analysis on")
+    print(paste0("Used columns: ", paste(cols2, collapse = ", ")))
+  } else {
+    stop(paste0("Wrong setup of second species input data file.",
+                "Did not find columns id and ", type, "."))
+  }
+  data2 <- data2[complete.cases(data2[, cols2]), cols2]
+  
+  path <- tempdir()
+  gmt <- gmtPathways(gmtPath)
+  hidden <- unique(unlist(gmt))
+  Adj <- matrix(NA, dimnames = list(hidden, names(gmt)),
+                nrow = length(hidden), ncol = length(gmt))
+  for (i in 1:dim(Adj)[2]){
+    Adj[,i] <- as.numeric(hidden %in% gmt[[i]])
+  }
+  hidden <- intersect(unique(c(rownames(data1), rownames(data2))),
+                      hidden)
+  Adj <- Adj[hidden, colnames(Adj)[which(colSums(Adj[hidden,])>minSize &
+                                           colSums(Adj[hidden,])<maxSize)]]
+  if(sign=="yes"){
+    hidden1 <- hidden
+    Adj <- pw_with_dir(Adj)
+  }
+  hidden <- rownames(Adj)
+  terms <- colnames(Adj)
+  assign <- apply(Adj, 1, function(x) paste(which(x>0)-1, collapse=","))
+  p.assign <- paste0(path, "assignmentMatrix.txt")
+  write(assign, file=p.assign)
+  p.terms <- paste0(path, "terms.txt")
+  write.table(terms, file=p.terms, col.names=F, row.names = F, quote=F)
+  
+  if(type=="pvalue"){
+    obs1 <- as.numeric(data1[hidden, "pvalue"] < cutoff)
+    obs2 <- as.numeric(data2[hidden, "pvalue"] < cutoff)
+    if(sign=="yes"){
+      obs1 <- c(as.numeric(data1[hidden1, "pvalue"] < cutoff &
+                             data1[hidden1, "sign"] > 0),
+                as.numeric(data1[hidden1, "pvalue"] < cutoff &
+                             data1[hidden1, "sign"] < 0))
+      obs2 <- c(as.numeric(data2[hidden1, "pvalue"] < cutoff &
+                             data2[hidden1, "sign"] > 0),
+                as.numeric(data2[hidden1, "pvalue"] < cutoff &
+                             data2[hidden1, "sign"] < 0))
+    }
+  } else if (type=="score"){
+    obs1 <- as.numeric(abs(data1[hidden, "score"]) > cutoff)
+    obs2 <- as.numeric(abs(data2[hidden, "score"]) > cutoff)
+    if(sign=="yes"){
+      if("sign" %in% cols1){
+        obs1 <- c(as.numeric(abs(data1[hidden1, "score"]) > cutoff &
+                               data1[hidden1, "sign"] > 0),
+                  as.numeric(abs(data1[hidden1, "score"]) > cutoff &
+                               data1[hidden1, "sign"] < 0))
+      }else{
+        obs1 <- c(as.numeric(abs(data1[hidden1, "score"]) > cutoff &
+                               data1[hidden1, "score"] > 0),
+                  as.numeric(abs(data1[hidden1, "score"]) > cutoff &
+                               data1[hidden1, "score"] < 0))
+      }
+      if("sign" %in% cols2){
+        obs2 <- c(as.numeric(abs(data2[hidden1, "score"]) > cutoff &
+                               data2[hidden1, "sign"] > 0),
+                  as.numeric(abs(data2[hidden1, "score"]) > cutoff &
+                               data2[hidden1, "sign"] < 0))
+      }else{
+        obs2 <- c(as.numeric(abs(data2[hidden1, "score"]) > cutoff &
+                               data2[hidden1, "score"] > 0),
+                  as.numeric(abs(data2[hidden1, "score"]) > cutoff &
+                               data2[hidden1, "score"] < 0))
+      }
+    }
+  }
+  obs1[is.na(obs1)] <- 0
+  obs2[is.na(obs2)] <- 0
+  miss1 <- c(as.numeric(!(hidden %in% data1$id)))
+  miss2 <- c(as.numeric(!(hidden %in% data2$id)))
+  p.miss1 <- paste0(path, "miss1.txt")
+  write.table(miss1, file=p.miss1,
+              col.names=F, row.names = F, quote=F)
+  p.miss2 <- paste0(path, "miss2.txt")
+  write.table(miss2, file=p.miss2,
+              col.names=F, row.names = F, quote=F)
+  p.obs1 <- paste0(path, "obs1.txt")
+  write.table(obs1, file=p.obs1,
+              col.names=F, row.names = F, quote=F)
+  p.obs2 <- paste0(path, "obs2.txt")
+  write.table(obs2, file=p.obs2,
+              col.names=F, row.names = F, quote=F)
+  p.out <- paste0(path, "output_two_species.txt")
+  
+  tries <- 0
+  while (!file.exists(p.out) & tries < 11){
+    tries <- tries + 1
+    sys2D <- system(paste(p.mono, p.mona, "7",
+                          p.assign, p.obs1, p.terms, p.out,
+                          "1", p.obs2, p.miss1, p.miss2,
+                          sep = " "), intern = T)
+  }
+  summary <- read.table(file=p.out, sep="\t", h=F)
+  colnames(summary) <- c("pathway", "posterior")
+  summary <- summary[order(summary$posterior, decreasing = T), ]
+  print.data.frame(summary[1:10, ], row.names=F)
+  unlink(path)
+  
+  twoMONAres <- list("summary" = summary,
+                     "res" = summary,
+                     "method" = "MONA two-species cooperative model",
+                     "opts" = list("data" = data.path,
+                                   "gmt" = gmt.path,
+                                   "minSize" = minSize,
+                                   "maxSize" = maxSize,
+                                   "type" = type,
+                                   "cutoff" = cutoff,
+                                   "sign" = sign,
+                                   "twomiss" = "yes"))
+  return(twoMONAres)
+  
+  # if(.Platform$OS.type =="windows"){
+  #   tries <- 0
+  #   while (!file.exists(p.out) && tries<3){
+  #     sys1 <- system(paste( p.mona, "0",
+  #                           p.assign, p.yn, p.terms, p.out, "1",
+  #                           sep = " "), intern = T)
+  #     tries <- tries+1
+  #   }
+  # } else {
+  #   tries <- 0
+  #   while (!file.exists(p.out) && tries<3){
+  #     sys1 <- system(paste( p.mono, p.mona, "0",
+  #                           p.assign, p.yn, p.terms, p.out, "1",
+  #                           sep = " "), intern = T)
+  #     tries <- tries+1
+  #   }
+  # }
+}
+
+
+
+
+## Run multi-omics MONA analysis (three species cooperative model) ---------------
+#' Run multi-omics MONA analysis (three species cooperative model)
+#' 
+#' @param data1Path string // file path to first species .RDS input file: data.frame, names=gene symbols or xlsx table
+#' @param data2Path string // file path to second species .RDS input file: data.frame, names=gene symbols or xlsx table
+#' @param data3Path string // file path to third species .RDS input file: data.frame, names=gene symbols or xlsx table
+#' @param gmtPath string // Dir containing Gene set definition to be used (KEGG/GO/custom)
+#' @param minSize integer // min size of GSs to be considered, default: 15
+#' @param maxSize integer // max size of GSs to be considered, default: 500
+#' @param type string // type of result information, e.g. pvalue, score or significant
+#' @param cut numeric // cutoff value for significance
+#' @param sign string // taking sign into account yes or no
+#' @param p.mono string // path to mono installation, default: mono
+#' @param p.mona string // path to MONAconsole App, default: /usr/bin/MonaConsoleApp.exe
+#' 
+#' @author Ines Assum
+run_mona3Dcoop <- function(data1Path, data2Path, data3Path,
+                           gmtPath,
+                           minSize=5, maxSize=500,
+                           type="pvalue", cutoff=0.05, sign="no",
+                           debug=FALSE,
+                           p.mono="mono", p.mona="/usr/bin/MonaConsoleApp.exe") {
+  require(fgsea)
+  data.path <- c(data1Path, data2Path, data3Path)
+  gmt.path <- gmtPath
+  
+  print("Reading data for the first species...")
+  if (grepl(".RDS|.rds|.Rds", data1Path)){
+    print("Detected .RDS file...Read in file:")
+    print(data1Path)
+    data1 <- readRDS(data1Path)
+    print("...done.")
+  } else if (grepl(".xlsx", data1Path)){
+    require(readxl)
+    print("Detected .xlsx file...Read in file:")
+    print(data1Path)
+    data1 <- data.frame(read_xlsx(data1Path))
+    print("...done.")
+  } else if (grepl(".xls", data1Path)){
+    require(readxl)
+    print("Detected .xls file...Read in file:")
+    print(data1Path)
+    data1 <- data.frame(read_xls(data1Path))
+    print("...done.")
+  }
+  
+  check.columns <- F
+  if ("id" %in% colnames(data1)){
+    rownames(data1) <- data1$id
+    cols1 <- "id"
+    if(type %in% colnames(data1)){
+      cols1 <- c(cols1, type)
+      if(type == "score" & sign == "yes"){
+        check.columns <- T
+        if("sign" %in% colnames(data1)){ cols1 <- c(cols1, "sign") }
+      }else if("sign" %in% colnames(data1) & sign=="yes"){
+        cols1 <- c(cols1, "sign")
+      }
+      check.columns <- T
+    }
+  }
+  if(check.columns){
+    print("Found needed information in the first species data file. Let's proceed with running the analysis on")
+    print(paste0("Used columns: ", paste(cols1, collapse = ", ")))
+  } else {
+    stop(paste0("Wrong setup of first species input data file.",
+                "Did not find columns id and ", type, "."))
+  }
+  data1 <- data1[complete.cases(data1[, cols1]), cols1]
+  
+  print("Reading data for the second species...")
+  if (grepl(".RDS|.rds|.Rds", data2Path)){
+    print("Detected .RDS file...Read in file:")
+    print(data2Path)
+    data2 <- readRDS(data2Path)
+    print("...done.")
+  } else if (grepl(".xlsx", data2Path)){
+    require(readxl)
+    print("Detected .xlsx file...Read in file:")
+    print(data2Path)
+    data2 <- data.frame(read_xlsx(data2Path))
+    print("...done.")
+  } else if (grepl(".xls", data2Path)){
+    require(readxl)
+    print("Detected .xls file...Read in file:")
+    print(data2Path)
+    data2 <- data.frame(read_xls(data2Path))
+    print("...done.")
+  }
+  check.columns <- F
+  if ("id" %in% colnames(data2)){
+    rownames(data2) <- data2$id
+    cols2 <- "id"
+    if(type %in% colnames(data2)){
+      cols2 <- c(cols2, type)
+      if(type == "score" & sign == "yes"){
+        check.columns <- T
+        if("sign" %in% colnames(data2)){ cols2 <- c(cols2, "sign") }
+      }else if("sign" %in% colnames(data2) & sign=="yes"){
+        cols2 <- c(cols2, "sign")
+      }
+      check.columns <- T
+    }
+  }
+  if(check.columns){
+    print("Found needed information in the second species data file. Let's proceed with running the analysis on")
+    print(paste0("Used columns: ", paste(cols2, collapse = ", ")))
+  } else {
+    stop(paste0("Wrong setup of second species input data file.",
+                "Did not find columns id and ", type, "."))
+  }
+  data2 <- data2[complete.cases(data2[, cols2]), cols2]
+  
+  print("Reading data for the third species...")
+  if (grepl(".RDS|.rds|.Rds", data3Path)){
+    print("Detected .RDS file...Read in file:")
+    print(data3Path)
+    data3 <- readRDS(data3Path)
+    print("...done.")
+  } else if (grepl(".xlsx", data3Path)){
+    require(readxl)
+    print("Detected .xlsx file...Read in file:")
+    print(data3Path)
+    data3 <- data.frame(read_xlsx(data3Path))
+    print("...done.")
+  } else if (grepl(".xls", data3Path)){
+    require(readxl)
+    print("Detected .xls file...Read in file:")
+    print(data3Path)
+    data3 <- data.frame(read_xls(data3Path))
+    print("...done.")
+  }
+  check.columns <- F
+  if ("id" %in% colnames(data3)){
+    rownames(data3) <- data3$id
+    cols3 <- "id"
+    if(type %in% colnames(data3)){
+      cols3 <- c(cols3, type)
+      if(type == "score" & sign == "yes"){
+        check.columns <- T
+        if("sign" %in% colnames(data3)){ cols3 <- c(cols3, "sign") }
+      }else if("sign" %in% colnames(data3) & sign=="yes"){
+        cols3 <- c(cols3, "sign")
+      }
+      check.columns <- T
+    }
+  }
+  if(check.columns){
+    print("Found needed information in the third species data file. Let's proceed with running the analysis on")
+    print(paste0("Used columns: ", paste(cols3, collapse = ", ")))
+  } else {
+    stop(paste0("Wrong setup of third species input data file.",
+                "Did not find columns id and ", type, "."))
+  }
+  data3 <- data3[complete.cases(data3[, cols3]), cols3]
+  
+  path <- tempdir()
+  gmt <- gmtPathways(gmtPath)
+  hidden <- unique(unlist(gmt))
+  Adj <- matrix(NA, dimnames = list(hidden, names(gmt)),
+                nrow = length(hidden), ncol = length(gmt))
+  for (i in 1:dim(Adj)[2]){
+    Adj[,i] <- as.numeric(hidden %in% gmt[[i]])
+  }
+  hidden <- intersect(unique(c(rownames(data1), rownames(data2), rownames(data3))),
+                      hidden)
+  Adj <- Adj[hidden, colnames(Adj)[which(colSums(Adj[hidden,])>minSize &
+                                           colSums(Adj[hidden,])<maxSize)]]
+  if(sign=="yes"){
+    hidden1 <- hidden
+    Adj <- pw_with_dir(Adj)
+  }
+  hidden <- rownames(Adj)
+  terms <- colnames(Adj)
+  assign <- apply(Adj, 1, function(x) paste(which(x>0)-1, collapse=","))
+  p.assign <- paste0(path, "assignmentMatrix.txt")
+  write(assign, file=p.assign)
+  p.terms <- paste0(path, "terms.txt")
+  write.table(terms, file=p.terms, col.names=F, row.names = F, quote=F)
+  
+  if(type=="pvalue"){
+    obs1 <- as.numeric(data1[hidden, "pvalue"] < cutoff)
+    obs2 <- as.numeric(data2[hidden, "pvalue"] < cutoff)
+    obs3 <- as.numeric(data3[hidden, "pvalue"] < cutoff)
+    if(sign=="yes"){
+      obs1 <- c(as.numeric(data1[hidden1, "pvalue"] < cutoff &
+                             data1[hidden1, "sign"] > 0),
+                as.numeric(data1[hidden1, "pvalue"] < cutoff &
+                             data1[hidden1, "sign"] < 0))
+      obs2 <- c(as.numeric(data2[hidden1, "pvalue"] < cutoff &
+                             data2[hidden1, "sign"] > 0),
+                as.numeric(data2[hidden1, "pvalue"] < cutoff &
+                             data2[hidden1, "sign"] < 0))
+      obs3 <- c(as.numeric(data3[hidden1, "pvalue"] < cutoff &
+                             data3[hidden1, "sign"] > 0),
+                as.numeric(data3[hidden1, "pvalue"] < cutoff &
+                             data3[hidden1, "sign"] < 0))
+    }
+  } else if (type=="score"){
+    obs1 <- as.numeric(abs(data1[hidden, "score"]) > cutoff)
+    obs2 <- as.numeric(abs(data2[hidden, "score"]) > cutoff)
+    obs3 <- as.numeric(abs(data3[hidden, "score"]) > cutoff)
+    if(sign=="yes"){
+      if("sign" %in% cols1){
+        obs1 <- c(as.numeric(abs(data1[hidden1, "score"]) > cutoff &
+                               data1[hidden1, "sign"] > 0),
+                  as.numeric(abs(data1[hidden1, "score"]) > cutoff &
+                               data1[hidden1, "sign"] < 0))
+      }else{
+        obs1 <- c(as.numeric(abs(data1[hidden1, "score"]) > cutoff &
+                               data1[hidden1, "score"] > 0),
+                  as.numeric(abs(data1[hidden1, "score"]) > cutoff &
+                               data1[hidden1, "score"] < 0))
+      }
+      if("sign" %in% cols2){
+        obs2 <- c(as.numeric(abs(data2[hidden1, "score"]) > cutoff &
+                               data2[hidden1, "sign"] > 0),
+                  as.numeric(abs(data2[hidden1, "score"]) > cutoff &
+                               data2[hidden1, "sign"] < 0))
+      }else{
+        obs2 <- c(as.numeric(abs(data2[hidden1, "score"]) > cutoff &
+                               data2[hidden1, "score"] > 0),
+                  as.numeric(abs(data2[hidden1, "score"]) > cutoff &
+                               data2[hidden1, "score"] < 0))
+      }
+      if("sign" %in% cols2){
+        obs3 <- c(as.numeric(abs(data3[hidden1, "score"]) > cutoff &
+                               data3[hidden1, "sign"] > 0),
+                  as.numeric(abs(data3[hidden1, "score"]) > cutoff &
+                               data3[hidden1, "sign"] < 0))
+      }else{
+        obs3 <- c(as.numeric(abs(data3[hidden1, "score"]) > cutoff &
+                               data3[hidden1, "score"] > 0),
+                  as.numeric(abs(data3[hidden1, "score"]) > cutoff &
+                               data3[hidden1, "score"] < 0))
+      }
+    }
+  }
+  
+  obs1[is.na(obs1)] <- 0
+  obs2[is.na(obs2)] <- 0
+  obs3[is.na(obs3)] <- 0
+  
+  miss1 <- c(as.numeric(!(hidden %in% data1$id)))
+  p.miss1 <- paste0(path, "miss1.txt")
+  write.table(miss1, file=p.miss1,
+              col.names=F, row.names = F, quote=F)
+  miss2 <- c(as.numeric(!(hidden %in% data2$id)))
+  p.miss2 <- paste0(path, "miss2.txt")
+  write.table(miss2, file=p.miss2,
+              col.names=F, row.names = F, quote=F)
+  miss3 <- c(as.numeric(!(hidden %in% data3$id)))
+  p.miss3 <- paste0(path, "miss3.txt")
+  write.table(miss3, file=p.miss3,
+              col.names=F, row.names = F, quote=F)
+  p.obs1 <- paste0(path, "obs1.txt")
+  write.table(obs1, file=p.obs1,
+              col.names=F, row.names = F, quote=F)
+  p.obs2 <- paste0(path, "obs2.txt")
+  write.table(obs2, file=p.obs2,
+              col.names=F, row.names = F, quote=F)
+  p.obs3 <- paste0(path, "obs3.txt")
+  write.table(obs3, file=p.obs3,
+              col.names=F, row.names = F, quote=F)
+  p.out <- paste0(path, "output_three_species.txt")
+  
+  tries <- 0
+  while (!file.exists(p.out) & tries < 11){
+    tries <- tries + 1
+    sys3D <- system(paste(p.mono, p.mona, "8",
+                          p.assign, p.obs1, p.terms, p.out,
+                          "1", p.obs2, p.obs3, p.miss1, p.miss2, p.miss3,
+                          sep = " "), intern = T)
+  }
+  summary <- read.table(file=p.out, sep="\t", h=F)
+  colnames(summary) <- c("pathway", "posterior")
+  summary <- summary[order(summary$posterior, decreasing = T), ]
+  print.data.frame(summary[1:10, ], row.names=F)
+  unlink(path)
+  
+  threeMONAres <- list("summary" = summary,
+                       "res" = summary,
+                       "method" = "MONA three-species cooperative model",
+                       "opts" = list("data" = data.path,
+                                     "gmt" = gmt.path,
+                                     "minSize" = minSize,
+                                     "maxSize" = maxSize,
+                                     "type" = type,
+                                     "cutoff" = cutoff,
+                                     "sign" = sign))
+  return(threeMONAres)
+  
+}
+
+
+
 # ------------------------------------------------------------------------------
 #' Function library for enrichment analysis
 #'
@@ -46,7 +1335,7 @@ run_mona1 <- function(data, gmtpath, minSize=5, maxSize=50, cutoff=25, sign="yes
   if(length(hidden2)==0){stop("GMT file does not match any genes from input. Please select another gmt or check names.")}
   Ass2 <- Ass[hidden2, colnames(Ass)[which(colSums(Ass[hidden2,]) > minSize & colSums(Ass[hidden2,]) < maxSize)]]  # Ass2: Ass, aber nur noch pws groesser und kleiner als min max
   if(debug) print("Done.")
-
+  
   # temp creation  
   if(debug) print("Creating temp files...")
   mona1 <- tempdir()
@@ -138,8 +1427,8 @@ run_mona1 <- function(data, gmtpath, minSize=5, maxSize=50, cutoff=25, sign="yes
               "res"=res1,
               "method"="MONA",
               "opts"=list("data"=data,
-                   #       "results"=result,
-
+                          #       "results"=result,
+                          
                           "gmt"=gmt,
                           "minSize"=minSize,
                           "maxSize"=maxSize,
@@ -151,6 +1440,7 @@ run_mona1 <- function(data, gmtpath, minSize=5, maxSize=50, cutoff=25, sign="yes
   q(save = "no")
   
 }
+
 #' Mona 2D
 run_mona2 <- function(data1, data2, gmtpath, minSize=5, maxSize=50, cutoff1=25, cutoff2=25, sign="yes", rev="small", debug=FALSE) {p.mona <- "/usr/bin/MonaConsoleApp.exe"
 p.mona <- "/usr/bin/MonaConsoleApp.exe"
@@ -297,7 +1587,7 @@ return(res)
 q(save = "no")
 }
 #' FGSEA
-run_gsea <- function(data, gmtpath, nperm=1000, minSize=5, maxSize=50, debug=FALSE){
+run_gsea2 <- function(data, gmtpath, nperm=1000, minSize=5, maxSize=50, debug=FALSE){
   # load data
   if(debug) print("Reading data...")
   if(grepl("\\.RDS", data) | grepl("\\.rds", data)){
@@ -1019,14 +2309,14 @@ plot_match <- function(matchmat, N){
 }
 ###################################################################
 ################### DEBUGGING #####################################
-  # data <-  "/Users/kris.g/maConstruction/scripts/data/example_data/mRNA.RDS"
-  # gmtpath <- "/Users/kris.g/maConstruction/scripts/data/gmt/c2.cp.kegg.v6.0.symbols.gmt"
-  # gmtpath <- "/Users/kris.g/Documents/gmts/drekegg.gmt"
-  # test1 <- run_mona1(data, gmtpath, sign="no",rev = "big")
-  # test2 <- run_gsea(data, gmtpath)
-  # values2 <- values1[1:200]
-  # saveRDS(values2, "/Users/kris.g/maConstruction/scripts/data/example_data/prot.RDS")
-  # data1 <- "/Users/kris.g/maConstruction/scripts/data/example_data/mRNA.RDS"
-  # data2 <- "/Users/kris.g/maConstruction/scripts/data/example_data/prot.RDS"
-  # test3 <- run_mona2(data1, data2, gmtpath, sign="no",rev = "big")
-  ###################################################################
+# data <-  "/Users/kris.g/maConstruction/scripts/data/example_data/mRNA.RDS"
+# gmtpath <- "/Users/kris.g/maConstruction/scripts/data/gmt/c2.cp.kegg.v6.0.symbols.gmt"
+# gmtpath <- "/Users/kris.g/Documents/gmts/drekegg.gmt"
+# test1 <- run_mona1(data, gmtpath, sign="no",rev = "big")
+# test2 <- run_gsea(data, gmtpath)
+# values2 <- values1[1:200]
+# saveRDS(values2, "/Users/kris.g/maConstruction/scripts/data/example_data/prot.RDS")
+# data1 <- "/Users/kris.g/maConstruction/scripts/data/example_data/mRNA.RDS"
+# data2 <- "/Users/kris.g/maConstruction/scripts/data/example_data/prot.RDS"
+# test3 <- run_mona2(data1, data2, gmtpath, sign="no",rev = "big")
+###################################################################

@@ -1,0 +1,73 @@
+<?xml version="1.0" ?>
+<tool name="simSTATS" version="1.0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
+    <description>Function to simulate correlated summary statistics of two omics.</description>
+    <manual>Different simulation scenarios are implemented. You need to supply a pathway annotation in form of a gmt file for the ground truth.</manual>
+    <executableName>simulate_summary_statistics.R</executableName>
+    <PARAMETERS version="1.6.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/Param_1_6_2.xsd">
+        <NODE name="simSTATS" description="Simulate multi-omics summary statistics.">
+            <ITEM description="Input - .gmt file for pathway annotations." name="input" type="input-file" required="true" supported_formats="*.gmt" value=""/>
+            <ITEM description="Label for the simulated data. Date stamp if empty." name="label" restrictions="" type="string" value=""/>
+            <ITEM description="Run simulations with a specific seed." name="seed" restrictions="" type="int" value="1234"/>
+            <ITEM description="Number of replicates/iterations/scenarios to sample." name="Niter" restrictions="" type="int" value="3"/>
+            <ITEM description="Shared or independent pathway activations across omics." name="scenario" restrictions="shared,independent" type="string" value=""/>
+            <ITEM description="Number of shared pathways to be active. Set to 0 for independent scenario." name="nactive" restrictions="" type="int" value="6"/>
+            <ITEM description="Number of gene sets active in the first species. Ignored for shared pathways." name="nactive1" restrictions="" type="int" value="0"/>
+            <ITEM description="Number of gene sets active in the second species. Ignored for shared pathways." name="nactive2" restrictions="" type="int" value="0"/>
+            <ITEM description="Coverage of the second species - fraction of genes included in pathway annotations (default: 0.3)." name="cov" restrictions="" type="float" value="0.3"/>
+            <ITEM description="Correlation between omics (default: 0.3)." name="rho" restrictions="" type="float" value="0.3"/>
+            <ITEM description="Do you want to prefilter gene sets for a certain size? All gene sets are considered, if this is set to 0. Otherwise, only gene sets bigger than this threshold will be considered." name="miss" restrictions="" type="int" value="5"/>
+            <ITEM description="Standard deviation of the background normal distribution." name="sdbg" restrictions="" type="float" value="2"/>
+            <ITEM description="Output - connect to output node." name="output1" type="output-file" required="true" supported_formats="*.zip,*.tar.gz,*.gz" value="simSTATS.tar.gz"/>
+            <ITEM description="Output - connect to output node." name="output2" type="output-file" required="true" supported_formats="*.zip,*.tar.gz,*.gz" value="simQC.tar.gz"/>
+            <ITEM description="Output - connect to output node." name="outputtxt" type="output-file" required="true" supported_formats="*.txt" value="parameter_info.txt"/>
+        </NODE>
+    </PARAMETERS>
+    <cli>
+        <clielement optionIdentifier="--gmt">
+            <mapping referenceName="simSTATS.input"/>
+        </clielement>
+        <clielement optionIdentifier="--out1">
+            <mapping referenceName="simSTATS.output1"/>
+        </clielement>
+        <clielement optionIdentifier="--out2">
+            <mapping referenceName="simSTATS.output2"/>
+        </clielement>
+        <clielement optionIdentifier="--outtxt">
+            <mapping referenceName="simSTATS.outputtxt"/>
+        </clielement>
+        <clielement optionIdentifier="--label">
+            <mapping referenceName="simSTATS.label"/>
+        </clielement>
+        <clielement optionIdentifier="--seed">
+            <mapping referenceName="simSTATS.seed"/>
+        </clielement>
+        <clielement optionIdentifier="--Niter">
+            <mapping referenceName="simSTATS.Niter"/>
+        </clielement>
+        <clielement optionIdentifier="--scenario">
+            <mapping referenceName="simSTATS.scenario"/>
+        </clielement>
+        <clielement optionIdentifier="--nactive">
+            <mapping referenceName="simSTATS.nactive"/>
+        </clielement>
+        <clielement optionIdentifier="--nactive1">
+            <mapping referenceName="simSTATS.nactive1"/>
+        </clielement>
+        <clielement optionIdentifier="--nactive2">
+            <mapping referenceName="simSTATS.nactive2"/>
+        </clielement>
+        <clielement optionIdentifier="--cov">
+            <mapping referenceName="simSTATS.cov"/>
+        </clielement>
+        <clielement optionIdentifier="--rho">
+            <mapping referenceName="simSTATS.rho"/>
+        </clielement>
+        <clielement optionIdentifier="--miss">
+            <mapping referenceName="simSTATS.miss"/>
+        </clielement>
+        <clielement optionIdentifier="--sdbg">
+            <mapping referenceName="simSTATS.sdbg"/>
+        </clielement>
+    </cli>
+</tool>
+

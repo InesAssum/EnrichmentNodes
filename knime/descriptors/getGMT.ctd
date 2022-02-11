@@ -1,17 +1,17 @@
 <?xml version="1.0" ?>
-<tool name="getGMT" version="1.0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
+<tool name="getGMT" version="2.0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
     <description>Builds GMT pathway annotation files from various online ressources.</description>
     <manual>Method to create an up to date gmt file for certain species. Currently includes homo sapiens (hsa), mus musculus (mus), rattus norvegicus (rno) and danio rerio (dre). Databases include KEGG, WikiPathways, Reactome and PanglaoDB. Note that some databases do not provide annotation for certain species.</manual>
-    <executableName>get_gmt.R</executableName>
+    <executableName>getGMT.R</executableName>
     <PARAMETERS version="1.6.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/Param_1_6_2.xsd">
         <NODE name="getGMT" description="Node for getting .gmt files">
-            <ITEM description="Output - connect to output node" name="output" type="output-file" required="true" supported_formats="*.gmt" value=""/>
             <ITEM description="Species: homo sapiens (hsa), mus musculus (mus), rattus norvegicus (rno) or danio rerio (dre)" name="species" restrictions="hsa,mmu,rno,dre" type="string" value="hsa"/>
-        	<ITEM description="EGG, WikiPathways, Reactome and PanglaoDB. Note that some databases do not provide annotation for certain species." name="db" restrictions="kegg,reactome,wikipathways,panglaodb" type="string" value="kegg"/>
+        	<ITEM description="KEGG pathways (kegg), Gene Ontology: biological processes (GO:BP), molecular function (GO:MF), cellular component (GO:CC), WikiPathways, Reactome and PanglaoDB. Note that some databases do not provide annotation for certain species." name="db" restrictions="kegg,GO:BP,GO:MF,GO:CC,reactome,wikipathways,panglaodb" type="string" value="kegg"/>
+            <ITEM description="Output - connect to output node." name="output" type="output-file" required="true" supported_formats="*.gmt" value=""/>
         </NODE>
     </PARAMETERS>
     <cli>
-        <clielement optionIdentifier="--out">
+        <clielement optionIdentifier="--outtable">
             <mapping referenceName="getGMT.output"/>
         </clielement>
         <clielement optionIdentifier="--species">

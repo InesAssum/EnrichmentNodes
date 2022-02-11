@@ -1,0 +1,53 @@
+<?xml version="1.0" ?>
+<tool name="MONA2Dinh" version="1.0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
+    <description>Runs MONA two species inhibitory model.</description>
+    <manual>MONA - Multilevel ONtology Analysis is a model-based Bayesian method for inferring interpretable pathway term probabilities in a modular C# framework.</manual>
+    <executableName>runner.R</executableName>
+    <PARAMETERS version="1.6.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/Param_1_6_2.xsd">
+        <NODE name="MONA2Dinh" description="Runs MONA two species cooperative model.">
+            <ITEM description="Path to the input file for the first species. You can supply either an excel table (.xls, .xlsx) or a R object." name="input1" type="input-file" required="false" supported_formats="*.RData,*.Rdata,*.RDS,*.xls,*.xlsx" value="/data/example_data/mRNA.xlsx"/>
+            <ITEM description="Path to the input file of the second species. You can supply either an excel table (.xls, .xlsx) or a R object." name="input2" type="input-file" required="false" supported_formats="*.RData,*.Rdata,*.RDS,*.xls,*.xlsx" value="/data/example_data/miRNA.xlsx"/>
+            <ITEM description="GMT file used for pathway definition. Select custom to provide your own gmt file." name="gmt" restrictions="GO:BP,KEGG,Reactome,custom" type="string" value="custom"/>
+            <ITEM description="Minimal size of a gene set to test. All pathways below the threshold are excluded." name="minSize" restrictions="0:100000" type="int" value="0"/>
+            <ITEM description="Maximal size of a gene set to test. All pathways above the threshold are excluded." name="maxSize" restrictions="1:100000" type="int" value=""/>
+            <ITEM description="Type of data to run the analysis on. Options are pvalue (numerical, positive, small values are more important), score (numerical, large absolute values are more important) or a column with significance information (binary 0/1, 1 meaning significant)." name="type" restrictions="pvalue,score,significant" type="string" value="pvalue"/>
+            <ITEM description="Cutoff to assess significance." name="cutoff" restrictions="" type="float" value="0.05"/>
+            <ITEM description="Custom GS definition" name="mygmt" supported_formats="*.gmt" required="false" type="input-file" value=""/>
+            <ITEM description="Output - connect to output node. Returns .RDS object." name="output1" type="output-file" required="false" supported_formats="*.RDS" value="MONA2Dinh_enrichment_results.RDS"/>
+            <ITEM description="Output - connect to output node. Returns a table with a summary of the enrichment results." name="output2" type="output-file" required="false" supported_formats="*.txt" value="MONA2Dinh_enrichment_summary.txt"/>
+		</NODE>
+	</PARAMETERS>
+	<cli>
+		<clielement optionIdentifier="--method MONA2Dinh"/>
+		<clielement optionIdentifier="--file1">
+			<mapping referenceName="MONA2Dinh.input1"/>
+        </clielement>
+        <clielement optionIdentifier="--file2">
+			<mapping referenceName="MONA2Dinh.input2"/>
+        </clielement>
+        <clielement optionIdentifier="--outres">
+            <mapping referenceName="MONA2Dinh.output1"/>
+        </clielement>
+        <clielement optionIdentifier="--outtable">
+            <mapping referenceName="MONA2Dinh.output2"/>
+        </clielement>
+		<clielement optionIdentifier="--gmt">
+			<mapping referenceName="MONA2Dinh.gmt"/>
+		</clielement>
+		<clielement optionIdentifier="--minSize">
+			<mapping referenceName="MONA2Dinh.minSize"/>
+		</clielement>
+        <clielement optionIdentifier="--maxSize">
+            <mapping referenceName="MONA2Dinh.maxSize"/>
+        </clielement>
+        <clielement optionIdentifier="--type">
+            <mapping referenceName="MONA2Dinh.type"/>
+        </clielement>
+        <clielement optionIdentifier="--cutoff">
+            <mapping referenceName="MONA2Dinh.cutoff"/>
+        </clielement>
+		<clielement optionIdentifier="--mygmt">
+			<mapping referenceName="MONA2Dinh.mygmt"/>
+		</clielement>
+	</cli>
+</tool>
