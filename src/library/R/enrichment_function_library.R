@@ -127,6 +127,9 @@ run_gsea <- function(dataPath, gmtPath,
     print("...done.")
   }
   
+  if(type=="significant"){
+    stop(print("You are trying to run GSEA on a set of significant genes, but GSEA needs complete rankings. Please provide a list of pvalues or summary statistics."))
+  }
   check.columns <- F
   if ("id" %in% colnames(data)){
     rownames(data) <- data$id
@@ -345,6 +348,15 @@ run_mgsa <- function(dataPath, gmtPath,
                              "_up", "_down"))
       }
     }
+  } else if (type=="significant"){
+    obs <- data$id[data$significant]
+    if(sign=="yes"){
+      if("sign" %in% cols){
+        obs <- paste0(data$id[data$significant],
+                      ifelse(data$score[data$significant]>0,
+                             "_up", "_down"))
+      }
+    }
   }
   
   res <- NULL
@@ -485,6 +497,16 @@ run_single_mona <- function(dataPath, gmtPath,
                               data[hidden1, "score"] > 0),
                  as.numeric(abs(data[hidden1, "score"]) > cutoff &
                               data[hidden1, "score"] < 0))
+      }
+    } else if (type=="significant"){
+      obs <- as.numeric(data[hidden, "significant"])
+      if(sign=="yes"){
+        if("sign" %in% cols){
+          obs <- c(as.numeric(data[hidden1, "significant"] &
+                                data[hidden1, "sign"] > 0),
+                   as.numeric(data[hidden1, "significant"] &
+                                data[hidden1, "sign"] < 0))
+        }
       }
     }
   }
@@ -690,6 +712,19 @@ run_mona2Dcoop <- function(data1Path, data2Path, gmtPath,
                                data2[hidden1, "score"] > 0),
                   as.numeric(abs(data2[hidden1, "score"]) > cutoff &
                                data2[hidden1, "score"] < 0))
+      }
+    } else if (type=="significant"){
+      obs1 <- as.numeric(data1[hidden, "significant"])
+      obs2 <- as.numeric(data2[hidden, "significant"])
+      if(sign=="yes"){
+        obs1 <- c(as.numeric(data1[hidden1, "significant"] &
+                                data1[hidden1, "sign"] > 0),
+                   as.numeric(data1[hidden1, "significant"] &
+                                data1[hidden1, "sign"] < 0))
+        obs2 <- c(as.numeric(data2[hidden1, "significant"] &
+                               data2[hidden1, "sign"] > 0),
+                  as.numeric(data2[hidden1, "significant"] &
+                               data2[hidden1, "sign"] < 0))
       }
     }
   }
@@ -924,6 +959,19 @@ run_mona2Dcoop2 <- function(data1Path, data2Path, gmtPath,
                                data2[hidden1, "score"] > 0),
                   as.numeric(abs(data2[hidden1, "score"]) > cutoff &
                                data2[hidden1, "score"] < 0))
+      }
+    } else if (type=="significant"){
+      obs1 <- as.numeric(data1[hidden, "significant"])
+      obs2 <- as.numeric(data2[hidden, "significant"])
+      if(sign=="yes"){
+        obs1 <- c(as.numeric(data1[hidden1, "significant"] &
+                               data1[hidden1, "sign"] > 0),
+                  as.numeric(data1[hidden1, "significant"] &
+                               data1[hidden1, "sign"] < 0))
+        obs2 <- c(as.numeric(data2[hidden1, "significant"] &
+                               data2[hidden1, "sign"] > 0),
+                  as.numeric(data2[hidden1, "significant"] &
+                               data2[hidden1, "sign"] < 0))
       }
     }
   }
@@ -1229,6 +1277,24 @@ run_mona3Dcoop <- function(data1Path, data2Path, data3Path,
                                data3[hidden1, "score"] > 0),
                   as.numeric(abs(data3[hidden1, "score"]) > cutoff &
                                data3[hidden1, "score"] < 0))
+      }
+    } else if (type=="significant"){
+      obs1 <- as.numeric(data1[hidden, "significant"])
+      obs2 <- as.numeric(data2[hidden, "significant"])
+      obs3 <- as.numeric(data3[hidden, "significant"])
+      if(sign=="yes"){
+        obs1 <- c(as.numeric(data1[hidden1, "significant"] &
+                               data1[hidden1, "sign"] > 0),
+                  as.numeric(data1[hidden1, "significant"] &
+                               data1[hidden1, "sign"] < 0))
+        obs2 <- c(as.numeric(data2[hidden1, "significant"] &
+                               data2[hidden1, "sign"] > 0),
+                  as.numeric(data2[hidden1, "significant"] &
+                               data2[hidden1, "sign"] < 0))
+        obs3 <- c(as.numeric(data3[hidden1, "significant"] &
+                               data3[hidden1, "sign"] > 0),
+                  as.numeric(data3[hidden1, "significant"] &
+                               data3[hidden1, "sign"] < 0))
       }
     }
   }

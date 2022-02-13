@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+<tool name="hiWorld" version="1.0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/CTD_0_3.xsd">
+    <description>HelloWorld test node.</description>
+    <manual>Example to showcase Generic KNIME nodes.</manual>
+    <executableName>sayHello.R</executableName>
+    <PARAMETERS version="1.6.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://github.com/genericworkflownodes/CTDopts/raw/master/schemas/Param_1_6_2.xsd">
+        <NODE name="hiWorld" description="HelloWorld test node">
+            <ITEM name="message" value="Hello world!" type="string" required="false" description="Insert your message."/>
+           <ITEM name="output" value="string.txt" type="output-file" required="true" supported_formats="*.txt" description="Name and path of output the file"/>
+        </NODE>
+    </PARAMETERS>
+    <cli>
+        <clielement optionIdentifier=" ">
+            <mapping referenceName="hiWorld.message" />
+        </clielement>
+        <clielement optionIdentifier=" ">
+            <mapping referenceName="hiWorld.output" />
+        </clielement>
+    </cli>
+</tool>

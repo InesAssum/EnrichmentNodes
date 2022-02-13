@@ -11,7 +11,7 @@
             <ITEM description="GMT file used for pathway definition. Select custom to provide your own gmt file." name="gmt" restrictions="GO:BP,KEGG,Reactome,custom" type="string" value="KEGG"/>
             <ITEM description="Minimal size of a gene set to test. All pathways below the threshold are excluded." name="minSize" restrictions="0:100000" type="int" value="15"/>
             <ITEM description="Maximal size of a gene set to test. All pathways above the threshold are excluded." name="maxSize" restrictions="1:100000" type="int" value="500"/>
-            <ITEM description="Type of data to run the analysis on. Options are pvalue (numerical, positive, small values are more important), score (numerical, large absolute values are more important) or a column with significance information (binary 0/1, 1 meaning significant)." name="type" restrictions="pvalue,score,significant" type="string" value="score"/>
+            <ITEM description="Type of data to run the analysis on. Options are pvalue (numerical, positive, small values are more important) or score (numerical, large absolute values are more important)." name="type" restrictions="pvalue,score" type="string" value="score"/>
             <ITEM description="Do you want to take direction of effect into account?" name="sign" restrictions="yes,no" type="string" value="yes"/>
             <ITEM description="Deprecated: Optional parameter to control the number of permutations. Minimal possible nominal p-value is about 1/nperm." name="nperm" restrictions="0:1000000000" type="int" value="0"/>
             <ITEM description="Custom GS definition" name="mygmt" supported_formats="*.gmt" required="false" type="input-file" value=""/>
